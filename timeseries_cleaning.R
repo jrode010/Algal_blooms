@@ -5,6 +5,8 @@
 #Load in libraries
 library(tidyverse)
 library(lubridate)
+library(plotly)
+library(htmlwidgets)
 
 ##So we have uploaded all of the data into the folder. I have cleaned some of the files. 
 ##First thing is to plot all of the easy data. So bring in:
@@ -40,12 +42,12 @@ mon_fun2 <- function(x, y, p, w, z){#for data needed to be grouped twice like fl
   return(b)
 }
 
-mctn = mon_fun1(x = c3d, y = Date, w = MC.TN..µM., z = 'mctn')
-actn = mon_fun1(x = c3d, y = Date, w = AC.TN..µM., z = 'actn')
-mctp = mon_fun1(x = c3d, y = Date, w = MC.FIU.TP..µM., z = 'mctp')
-actp = mon_fun1(x = c3d, y = Date, w = AC.FIU.TP..µM., z = 'actp')
-mcsal = mon_fun1(x = c3d, y = Date, w = MC.Sal..ppt., z = 'mcsal')
-acsal = mon_fun1(x = c3d, y = Date, w = AC.Sal..ppt., z = 'acsal')
+mctn = mon_fun1(x = c3d, y = Date, w = MC.TN..µM., z = 'mctn') %>% mutate(mctn = if_else(mctn < 0, NA, mctn))
+actn = mon_fun1(x = c3d, y = Date, w = AC.TN..µM., z = 'actn') %>% mutate(actn = if_else(actn < 0, NA, mctn))
+mctp = mon_fun1(x = c3d, y = Date, w = MC.FIU.TP..µM., z = 'mctp') %>% mutate(mctp = if_else(mctp < 0, NA, mctp))
+actp = mon_fun1(x = c3d, y = Date, w = AC.FIU.TP..µM., z = 'actp') %>% mutate(actp = if_else(actp < 0, NA, actp))
+mcsal = mon_fun1(x = c3d, y = Date, w = MC.Sal..ppt., z = 'mcsal') %>% mutate(mcsal = if_else(mcsal < 0, NA, mcsal))
+acsal = mon_fun1(x = c3d, y = Date, w = AC.Sal..ppt., z = 'acsal') %>% mutate(acsal = if_else(acsal < 0, NA, acsal))
 
 c3dlist <- list(mctn, actn, mctp, actp, mcsal, acsal)
 c3dm <- reduce(c3dlist, full_join, by = "date")
@@ -65,6 +67,8 @@ head(f)
 f <- f %>% rename(date = month, mctnm = mean_MC.TN..µM., actnm = mean_AC.TN..µM., mctpm = mean_MC.FIU.TP..µM., actpm = mean_AC.FIU.TP..µM., mcnn = mean_MC.N.N..µM., acnn = mean_AC.N.N..µM., mcno3 = mean_MC.NO3..µM., acno3 = mean_AC.NO3..µM., mcno2 = mean_MC.NO2..µM., acno2 = mean_AC.NO2..µM., mcnh4 = mean_MC.NH4..µM., acnh4 = mean_AC.NH4..µM., mcsrp = mean_MC.SRP..µM., acsrp = mean_AC.SRP..µM., mcdoc = mean_MC.DOC..µM., acdoc = mean_AC.DOC..µM., mcsalm = mean_MC.Sal..ppt., acsalm = mean_AC.Sal..ppt.)
 
 cdat <- merge(c3dm, f, by = 'date')
+
+cdat[cdat < 0] <- NA
 
 #final dataset for creek nutrients is cdat
 #let's move onto creek discharge
@@ -94,7 +98,7 @@ ggdat <- ggdat %>% dplyr::select(date, gTOC, gDO, ktn, gNN, gNO3, gNO2, gTP, gsa
 head(rg)
 rgdat <- mon_fun2(rg, Collection_Date, Test.Name, Value, 'mean') %>% filter(Test.Name != "") %>% pivot_wider(names_from = Test.Name, values_from = mean) #%>% rename(aflow = flow, amaxstage = maxstage, aminstage = minstage)
 str(rgdat)
-colnames(rgdat) <- c('date', 'rTOC', 'trashchl', 'rDO', 'ktn', 'rNN', 'rNO3', 'rNO2', 'rTP', 'rsal', 'rturb', 'rtemp', 'rNH4', 'rAP', 'rOP', 'rsil', 'tn', 'rpH', 'rcar', 'trashchl2', 'trashchl3', 'trashchlb', 'trashchlc', 'trashph', 'rsecchi', 'con', 'rdepth', 'rchl', 'rchlb', 'rpheo', 'al', 'cal', 'chlor', 'hard', 'mr', 'pot', 'sod', 'sul', 'ds')
+colnames(rgdat) <- c('date', 'rNH4', 'rTOC', 'trashchl', 'rDO', 'ktn', 'rNN', 'rNO3', 'rNO2', 'rTP', 'rsal', 'rturb', 'rtemp', 'rAP', 'rOP', 'rsil', 'tn', 'rpH', 'rcar', 'trashchl2', 'trashchl3', 'trashchlb', 'trashchlc', 'trashph', 'rsecchi', 'con', 'rdepth', 'rchl', 'rchlb', 'rpheo', 'al', 'cal', 'chlor', 'hard', 'mr', 'pot', 'sod', 'sul', 'ds')
 str(rgdat)
 
 rgdat <- rgdat %>% dplyr::select(date, rTOC, rDO, ktn, rNN, rNO3, rNO2, rTP, rsal, rturb, rtemp, rNH4, rAP, rOP, tn, rpH, rsecchi, rdepth, rchl, rchlb) %>% mutate(rTN = coalesce(tn, ktn)) %>% dplyr::select(-tn, -ktn)
@@ -103,7 +107,7 @@ head(tg)
 
 tgdat <- mon_fun2(tg, Collection_Date, Test.Name, Value, 'mean') %>% filter(Test.Name != "") %>% pivot_wider(names_from = Test.Name, values_from = mean) #%>% rename(aflow = flow, amaxstage = maxstage, aminstage = minstage)
 str(tgdat)
-colnames(tgdat) <- c('date', 'tTOC', 'trashchl', 'tDO', 'ktn', 'tNN', 'tNO3', 'tNO2', 'tTP', 'tsal', 'tturb', 'ttemp', 'tNH4', 'tAP', 'tOP', 'tsil', 'tn', 'tpH', 'tcar', 'trashchl2', 'trashchl3', 'trashchlb', 'trashchlc', 'trashph', 'tsecchi', 'con', 'tdepth', 'tchl', 'tchlb', 'tpheo', 'al', 'cal', 'chlor', 'hard', 'mt', 'pot', 'sod', 'sul', 'ds')
+colnames(tgdat) <- c('date', 'tNH4', 'tTOC', 'trashchl', 'tDO', 'ktn', 'tNN', 'tNO3', 'tNO2', 'tTP', 'tsal', 'tturb', 'ttemp', 'tAP', 'tOP', 'tsil', 'tn', 'tpH', 'tcar', 'trashchl2', 'trashchl3', 'trashchlb', 'trashchlc', 'trashph', 'tsecchi', 'con', 'tdepth', 'tchl', 'tchlb', 'tpheo', 'al', 'cal', 'chlor', 'hard', 'mt', 'pot', 'sod', 'sul', 'ds')
 str(tgdat)
 
 tgdat <- tgdat %>% dplyr::select(date, tTOC, tDO, ktn, tNN, tNO3, tNO2, tTP, tsal, tturb, ttemp, tNH4, tAP, tOP, tn, tpH, tsecchi, tdepth, tchl, tchlb) %>% mutate(tTN = coalesce(tn, ktn)) %>% dplyr::select(-tn, -ktn)
@@ -111,12 +115,13 @@ tgdat <- tgdat %>% dplyr::select(date, tTOC, tDO, ktn, tNN, tNO3, tNO2, tTP, tsa
 glist <- list(ggdat, rgdat, tgdat)
 gdat <- reduce(glist, full_join, by = "date")
 
+gdat[gdat < 0] <- NA
 #final grab sample dataset is gdat
 #next is rainfall
 head(mr)
 
 mrdat <- mr %>% mutate(date = mdy(Daily.Date)) %>% mutate(date = as.Date(format(date, '%Y-%m-01')))%>% group_by(date) %>% summarize(sum = sum(Data.Value, na.rm = T), mean = mean(Data.Value, na.rm = T)) %>% dplyr::rename(marshtotrain = sum, marshmeanrain = mean) %>% slice(-(1:187))
-
+mrdat[mrdat < 0] <- NA
 #clean dataset for rain is mrdat
 
 #finally it is station data
@@ -138,6 +143,12 @@ tsdat <- ts %>%
   summarise(across(where(is.numeric), ~mean(.x, na.rm = TRUE), .names = "ts{.col}"))
 head(tsdat)
 
+str(tsdat)
+
+tsdat1 <- tsdat %>% dplyr::select(-tsmeanstage)
+tsdat1[tsdat1 < 0] <- NA
+tsdat2 <- tsdat %>% dplyr::select(month, tsmeanstage)
+
 head(gs)
 
 gs <- gs %>% dplyr::select(date, chlorophyll, DO, pH, rainfall, salinity, temperature, meanstage)
@@ -156,7 +167,12 @@ gsdat <- gs %>%
   summarise(across(where(is.numeric), ~mean(.x, na.rm = TRUE), .names = "gs{.col}"))
 head(gsdat)
 
-stationdat <- merge(tsdat, gsdat, by = 'month') %>% rename(date = month)
+gsdat1 <- gsdat %>% dplyr::select(-gsmeanstage)
+gsdat1[gsdat1 < 0] <- NA
+gsdat2 <- gsdat %>% dplyr::select(month, gsmeanstage)
+
+statlist <- list(tsdat1, tsdat2, gsdat1, gsdat2)
+stationdat <- reduce(statlist, full_join, by = 'month') %>% rename(date = month)
 
 #final dataset for stations is stationdat
 ##So we have gathered all the data together, let's put it all in one dataframe. Then we will work on the buoy data
@@ -167,26 +183,6 @@ str(fulldat)
 fulldat <- fulldat[order(fulldat$date),]
 
 #plot all with plotly
-library(plotly)
-
-longdata <- fulldat %>%
-  pivot_longer(cols = -date, names_to = "variable", values_to = "value")
-
-plot <- ggplot(longdata, aes(x = date, y = value, color = variable)) +
-  geom_line() +
-  theme_minimal() +
-  labs(title = "Time Series Overview", x = "Date", y = "Value")
-
-ggplotly(plot)
-
-plot_ly(data = longdata, type = 'scatter', mode = 'lines') %>%
-  add_trace(x = ~date, y = ~value, color = ~variable, colors = "Set1", split = ~variable) %>%
-  layout(
-    title = "Interactive Time Series with Dynamic Y-Axis",
-    xaxis = list(title = "Date"),
-    yaxis = list(title = "Value", autorange = TRUE),
-    legend = list(orientation = "h")
-  )
 
 fulldat[fulldat == -99] <- NA
 
@@ -198,7 +194,6 @@ plot <- ggplot(longdata, aes(x = date, y = value, color = variable)) +
   theme_minimal() +
   labs(title = "Time Series Overview", x = "Date", y = "Value")
 
-ggplotly(plot)
 
 p <- plot_ly(data = longdata, type = 'scatter', mode = 'lines') %>%
   add_trace(x = ~date, y = ~value, color = ~variable, colors = "Set1", split = ~variable, connectgaps = TRUE) %>%
@@ -209,8 +204,5 @@ p <- plot_ly(data = longdata, type = 'scatter', mode = 'lines') %>%
     legend = list(orientation = "h")
   )
 
-install.packages('htmlwidgets')
-
-library(htmlwidgets)
 
 saveWidget(p, "docs/interactive_plot.html", selfcontained = TRUE)
