@@ -166,3 +166,51 @@ fulldat <- reduce(fulist, full_join, by = 'date')
 str(fulldat)
 fulldat <- fulldat[order(fulldat$date),]
 
+#plot all with plotly
+library(plotly)
+
+longdata <- fulldat %>%
+  pivot_longer(cols = -date, names_to = "variable", values_to = "value")
+
+plot <- ggplot(longdata, aes(x = date, y = value, color = variable)) +
+  geom_line() +
+  theme_minimal() +
+  labs(title = "Time Series Overview", x = "Date", y = "Value")
+
+ggplotly(plot)
+
+plot_ly(data = longdata, type = 'scatter', mode = 'lines') %>%
+  add_trace(x = ~date, y = ~value, color = ~variable, colors = "Set1", split = ~variable) %>%
+  layout(
+    title = "Interactive Time Series with Dynamic Y-Axis",
+    xaxis = list(title = "Date"),
+    yaxis = list(title = "Value", autorange = TRUE),
+    legend = list(orientation = "h")
+  )
+
+fulldat[fulldat == -99] <- NA
+
+longdata <- fulldat %>%
+  pivot_longer(cols = -date, names_to = "variable", values_to = "value")
+
+plot <- ggplot(longdata, aes(x = date, y = value, color = variable)) +
+  geom_line() +
+  theme_minimal() +
+  labs(title = "Time Series Overview", x = "Date", y = "Value")
+
+ggplotly(plot)
+
+p <- plot_ly(data = longdata, type = 'scatter', mode = 'lines') %>%
+  add_trace(x = ~date, y = ~value, color = ~variable, colors = "Set1", split = ~variable, connectgaps = TRUE) %>%
+  layout(
+    title = "Timeseries of datasets in Florida Bay",
+    xaxis = list(title = "Date"),
+    yaxis = list(title = "Value", autorange = TRUE),
+    legend = list(orientation = "h")
+  )
+
+install.packages('htmlwidgets')
+
+library(htmlwidgets)
+
+saveWidget(p, "docs/interactive_plot.html", selfcontained = TRUE)
