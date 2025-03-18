@@ -118,3 +118,51 @@ head(mr)
 mrdat <- mr %>% mutate(date = mdy(Daily.Date)) %>% mutate(date = as.Date(format(date, '%Y-%m-01')))%>% group_by(date) %>% summarize(sum = sum(Data.Value, na.rm = T), mean = mean(Data.Value, na.rm = T)) %>% dplyr::rename(marshtotrain = sum, marshmeanrain = mean) %>% slice(-(1:187))
 
 #clean dataset for rain is mrdat
+
+#finally it is station data
+head(ts)
+
+ts <- ts %>% dplyr::select(date, chlorophyll, DO, pH, rainfall, salinity, temperature, meanstage)
+ts$chlorophyll <- as.numeric(ts$chlorophyll)
+ts$DO <- as.numeric(ts$DO)
+ts$pH <- as.numeric(ts$pH)
+ts$rainfall <- as.numeric(ts$rainfall)
+ts$salinity <- as.numeric(ts$salinity)
+ts$temperature <- as.numeric(ts$temperature)
+ts$meanstage <- as.numeric(ts$meanstage)
+
+tsdat <- ts %>%
+  mutate(Date = mdy(date),  # Convert to Date object
+         month = as.Date(format(Date, "%Y-%m-01"))) %>%  # Extract year-month
+  group_by(month) %>%
+  summarise(across(where(is.numeric), ~mean(.x, na.rm = TRUE), .names = "ts{.col}"))
+head(tsdat)
+
+head(gs)
+
+gs <- gs %>% dplyr::select(date, chlorophyll, DO, pH, rainfall, salinity, temperature, meanstage)
+gs$chlorophyll <- as.numeric(gs$chlorophyll)
+gs$DO <- as.numeric(gs$DO)
+gs$pH <- as.numeric(gs$pH)
+gs$rainfall <- as.numeric(gs$rainfall)
+gs$salinity <- as.numeric(gs$salinity)
+gs$temperature <- as.numeric(gs$temperature)
+gs$meanstage <- as.numeric(gs$meanstage)
+
+gsdat <- gs %>%
+  mutate(Date = mdy(date),  # Convert to Date object
+         month = as.Date(format(Date, "%Y-%m-01"))) %>%  # Extract year-month
+  group_by(month) %>%
+  summarise(across(where(is.numeric), ~mean(.x, na.rm = TRUE), .names = "gs{.col}"))
+head(gsdat)
+
+stationdat <- merge(tsdat, gsdat, by = 'month') %>% rename(date = month)
+
+#final dataset for stations is stationdat
+##So we have gathered all the data together, let's put it all in one dataframe. Then we will work on the buoy data
+fulist <- list(cdat, flow, gdat, mrdat, stationdat)
+
+fulldat <- reduce(fulist, full_join, by = 'date')
+str(fulldat)
+fulldat <- fulldat[order(fulldat$date),]
+
