@@ -206,3 +206,39 @@ p <- plot_ly(data = longdata, type = 'scatter', mode = 'lines') %>%
 
 
 saveWidget(p, "docs/interactive_plot.html", selfcontained = TRUE)
+
+#Time series of chlorophyll for seatrout presentation
+
+df_ch <- fulldat %>% dplyr::select(date, gchl, tchl, rchl) 
+
+df_ch$chl <- rowMeans(df_ch[, c("gchl", "tchl", "rchl")], na.rm = TRUE)
+
+df_ch$sd <- apply(df_ch[, c("gchl", "tchl", "rchl")], 1, function(x) sd(x, na.rm = TRUE))
+
+
+df_ch2010 <- df_ch %>% filter(date > ymd('2010-01-01'))
+df_c2010 <- df_ch %>% filter(!is.na(chl))
+
+ggplot()+
+  #scale_x_continuous(breaks=seq(1,12,1), limits = c(1,12))+
+  #scale_y_continuous(breaks=seq(5,55,10), limits = c(5,55))+
+  theme_classic()+
+  #geom_smooth(data = CN.sal3, aes(month, mean_sal, color = year, linetype = Line), 
+  #method = "loess", se = FALSE, fullrange = TRUE, size = 1)+
+  geom_line(data = df_c2010, aes(date, chl),
+            size = 0.5, color = 'darkgreen')+
+  # geom_ribbon(data = df_c2010, aes(x= date, ymin = (chl - (1.96*sd)),
+  #                                  ymax = (chl + (1.96*sd)), fill="grey85", alpha = 0.6))+
+  scale_y_continuous(breaks=seq(0,30,3), limits = c(0,30))+
+  scale_x_date(breaks = seq(as.Date("2010-01-01"),
+                            as.Date("2024-12-31"), by = "1 year"),date_labels = "%Y")+
+  labs(title = "Chlorophyll Northcentral Florida Bay", x = "Year", y = "Chlorophyll")+
+  theme(axis.text = element_text(size = 10, color = "black", face = "bold"),
+        legend.text = element_text(size = 10, color = "black", face = "bold"),
+        axis.title = element_text(size = 16, face = "bold"), 
+        plot.title = element_text(size = 16, face = "bold", hjust = 0.5))
+
+ggsave(filename = "Chlorophyll_2010_2024.png", 
+       path = "E:/FIU/PostDoc/CESI/Final_presentation/",
+       units="in", width=10, height=6, 
+       dpi=300)
