@@ -43,7 +43,7 @@ mon_fun2 <- function(x, y, p, w, z){#for data needed to be grouped twice like fl
 }
 
 mctn = mon_fun1(x = c3d, y = Date, w = MC.TN..µM., z = 'mctn') %>% mutate(mctn = if_else(mctn < 0, NA, mctn))
-actn = mon_fun1(x = c3d, y = Date, w = AC.TN..µM., z = 'actn') %>% mutate(actn = if_else(actn < 0, NA, mctn))
+actn = mon_fun1(x = c3d, y = Date, w = AC.TN..µM., z = 'actn') %>% mutate(actn = if_else(actn < 0, NA, actn))
 mctp = mon_fun1(x = c3d, y = Date, w = MC.FIU.TP..µM., z = 'mctp') %>% mutate(mctp = if_else(mctp < 0, NA, mctp))
 actp = mon_fun1(x = c3d, y = Date, w = AC.FIU.TP..µM., z = 'actp') %>% mutate(actp = if_else(actp < 0, NA, actp))
 mcsal = mon_fun1(x = c3d, y = Date, w = MC.Sal..ppt., z = 'mcsal') %>% mutate(mcsal = if_else(mcsal < 0, NA, mcsal))
@@ -182,6 +182,8 @@ fulldat <- reduce(fulist, full_join, by = 'date')
 str(fulldat)
 fulldat <- fulldat[order(fulldat$date),]
 
+write.csv(fulldat, file = 'coastal_data_month.csv')
+
 #plot all with plotly
 
 fulldat[fulldat == -99] <- NA
@@ -241,4 +243,120 @@ ggplot()+
 ggsave(filename = "Chlorophyll_2010_2024.png", 
        path = "E:/FIU/PostDoc/CESI/Final_presentation/",
        units="in", width=10, height=6, 
+       dpi=300)
+
+#Graph of garfield chlorophyll, alligator flow, alligator nutrients
+df_g <- fulldat %>% dplyr::select(date, gchl, aflow, actn, actp)
+
+df_g10 <- df_g %>% filter(date > ymd('2010-01-01'))
+
+#names(df_g10) <- c('date', 'Garfield Chlorophyll', 'Alligator Creek Flow', 'Alligator Creek Total Nitrogen', 'Alligator Creek Total Phosphorus')
+
+df_g10 <- df_g10 %>% filter(date < ymd('2024-05-01'))
+
+library(zoo)
+
+df_g10$`Garfield Chlorophyll` <- na.approx(df_g10$gchl, x = df_g10$date, na.rm = FALSE)
+df_g10$`Alligator Flow` <- na.approx(df_g10$aflow, x = df_g10$date, na.rm = FALSE)
+df_g10$`Garfield Total Nitrogen` <- na.approx(df_g10$actn, x = df_g10$date, na.rm = FALSE)
+df_g10$`Garfield Total Phosphorus` <- na.approx(df_g10$actp, x = df_g10$date, na.rm = FALSE)
+
+df_g1 <- df_g10 %>%
+  mutate(`Garfield Chlorophyll` = (`Garfield Chlorophyll` - mean(`Garfield Chlorophyll`, na.rm = TRUE)) / 
+           sd(`Garfield Chlorophyll`, na.rm = TRUE), `Alligator Flow` = (`Alligator Flow` - mean(`Alligator Flow`, na.rm = TRUE)) / 
+           sd(`Alligator Flow`, na.rm = TRUE), `Alligator Total Nitrogen` = (`Garfield Total Nitrogen` - mean(`Garfield Total Nitrogen`, na.rm = TRUE)) / 
+           sd(`Garfield Total Nitrogen`, na.rm = TRUE), `Alligator Total Phosphorus` = (`Garfield Total Phosphorus` - mean(`Garfield Total Phosphorus`, na.rm = TRUE)) / 
+  sd(`Garfield Total Phosphorus`, na.rm = TRUE))
+
+# ggplot()+
+#   #scale_x_continuous(breaks=seq(1,12,1), limits = c(1,12))+
+#   #scale_y_continuous(breaks=seq(5,55,10), limits = c(5,55))+
+#   theme_classic()+
+#   #geom_smooth(data = CN.sal3, aes(month, mean_sal, color = year, linetype = Line), 
+#   #method = "loess", se = FALSE, fullrange = TRUE, size = 1)+
+#   geom_line(data = df_g1, aes(date, `Garfield Chlorophyll`, color = 'Garfield Chlorophyll'),
+#             size = 2, color = 'darkgreen', na.rm = T)+
+#   geom_line(data = df_g1, aes(date, `Alligator Flow`, color = 'Alligator Flow'), size = 1, color = 'blue', na.rm = T)+
+#   #geom_line(data = df_g1, aes(date, `Alligator Total Nitrogen`), size = 0.5, color = 'purple', na.rm = T)+
+#   # geom_ribbon(data = df_c2010, aes(x= date, ymin = (chl - (1.96*sd)),
+#   #                                  ymax = (chl + (1.96*sd)), fill="grey85", alpha = 0.6))+
+#   scale_y_continuous(breaks=seq(-2, 3,1), limits = c(-2,3))+
+#   scale_x_date(breaks = seq(as.Date("2010-01-01"),
+#                             as.Date("2024-04-30"), by = "1 year"),date_labels = "%Y")+
+#   labs(title = "Garfield Chlorophyll vs. Flow out of Alligator", x = "Year", y = "Z-scored levels")+
+#   theme(axis.text = element_text(size = 10, color = "black", face = "bold"),
+#         legend.text = element_text(size = 10, color = "black", face = "bold"),
+#         axis.title = element_text(size = 16, face = "bold"), 
+#         plot.title = element_text(size = 16, face = "bold", hjust = 0.5))
+
+ggplot() +
+  theme_classic() +
+  geom_line(data = df_g1, aes(date, `Garfield Chlorophyll`, color = 'Garfield Chlorophyll'),
+            size = 2, na.rm = TRUE) +
+  geom_line(data = df_g1, aes(date, `Alligator Flow`, color = 'Alligator Flow'),
+            size = 1, na.rm = TRUE) +
+  scale_color_manual(values = c('Garfield Chlorophyll' = 'darkgreen', 
+                                'Alligator Flow' = 'blue')) +
+  scale_y_continuous(breaks = seq(-2, 3, 1), limits = c(-2, 3)) +
+  scale_x_date(breaks = seq(as.Date("2010-01-01"),
+                            as.Date("2024-04-30"), by = "1 year"),
+               date_labels = "%Y") +
+  labs(title = "Garfield Chlorophyll vs. Flow out of Alligator",
+       x = "Year", y = "Z-scored levels", color = "Legend") +
+  theme(axis.text = element_text(size = 10, color = "black", face = "bold"),
+        legend.text = element_text(size = 10, color = "black", face = "bold"),
+        axis.title = element_text(size = 16, face = "bold"), 
+        plot.title = element_text(size = 16, face = "bold", hjust = 0.5))
+
+ggsave(filename = "Chlorophyll_flow.png", 
+       path = "E:/FIU/PostDoc/FB_sediment_algal_blooms/Project/Imagery_proposal/",
+       units="in", width=12, height=6, 
+       dpi=300)
+
+ggplot() +
+  theme_classic() +
+  geom_line(data = df_g1, aes(date, `Garfield Chlorophyll`, color = 'Garfield Chlorophyll'),
+            size = 2, na.rm = TRUE) +
+  geom_line(data = df_g1, aes(date, `Alligator Total Nitrogen`, color = 'Alligator Total Nitrogen'),
+            size = 1, na.rm = TRUE) +
+  scale_color_manual(values = c('Garfield Chlorophyll' = 'darkgreen', 
+                                'Alligator Total Nitrogen' = 'purple')) +
+  scale_y_continuous(breaks = seq(-2, 3, 1), limits = c(-2, 3)) +
+  scale_x_date(breaks = seq(as.Date("2010-01-01"),
+                            as.Date("2024-04-30"), by = "1 year"),
+               date_labels = "%Y") +
+  labs(title = "Garfield Chlorophyll vs. Total Nitrogen from Alligator",
+       x = "Year", y = "Z-scored levels", color = "Legend") +
+  theme(axis.text = element_text(size = 10, color = "black", face = "bold"),
+        legend.text = element_text(size = 10, color = "black", face = "bold"),
+        axis.title = element_text(size = 16, face = "bold"), 
+        plot.title = element_text(size = 16, face = "bold", hjust = 0.5))
+
+ggsave(filename = "Chlorophyll_TN.png", 
+       path = "E:/FIU/PostDoc/FB_sediment_algal_blooms/Project/Imagery_proposal/",
+       units="in", width=12, height=6, 
+       dpi=300)
+
+ggplot() +
+  theme_classic() +
+  geom_line(data = df_g1, aes(date, `Garfield Chlorophyll`, color = 'Garfield Chlorophyll'),
+            size = 2, na.rm = TRUE) +
+  geom_line(data = df_g1, aes(date, `Alligator Total Phosphorus`, color = 'Alligator Total Phosphorus'),
+            size = 1, na.rm = TRUE) +
+  scale_color_manual(values = c('Garfield Chlorophyll' = 'darkgreen', 
+                                'Alligator Total Phosphorus' = 'darkorange')) +
+  scale_y_continuous(breaks = seq(-2, 3, 1), limits = c(-2, 3)) +
+  scale_x_date(breaks = seq(as.Date("2010-01-01"),
+                            as.Date("2024-04-30"), by = "1 year"),
+               date_labels = "%Y") +
+  labs(title = "Garfield Chlorophyll vs. Total Phosphorus from Alligator",
+       x = "Year", y = "Z-scored levels", color = "Legend") +
+  theme(axis.text = element_text(size = 10, color = "black", face = "bold"),
+        legend.text = element_text(size = 10, color = "black", face = "bold"),
+        axis.title = element_text(size = 16, face = "bold"), 
+        plot.title = element_text(size = 16, face = "bold", hjust = 0.5))
+
+ggsave(filename = "Chlorophyll_TP.png", 
+       path = "E:/FIU/PostDoc/FB_sediment_algal_blooms/Project/Imagery_proposal/",
+       units="in", width=12, height=6, 
        dpi=300)
