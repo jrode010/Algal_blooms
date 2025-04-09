@@ -209,7 +209,7 @@ p <- plot_ly(data = longdata, type = 'scatter', mode = 'lines') %>%
 
 saveWidget(p, "docs/interactive_plot.html", selfcontained = TRUE)
 
-#Time series of chlorophyll for seatrout presentation
+###Time series of chlorophyll for seatrout presentation####
 
 df_ch <- fulldat %>% dplyr::select(date, gchl, tchl, rchl) 
 
