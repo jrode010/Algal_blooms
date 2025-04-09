@@ -14,26 +14,26 @@ library(Rssa)
 
   str(dat)
   
-  dat <- dat %>% dplyr::filter(date > ymd('2010-10-01'))
-  dat <- dat %>% dplyr::filter(date < ymd('2024-06-01'))
+  dat <- dat %>% dplyr::filter(date > ymd('2011-01-01'))
+  dat <- dat %>% dplyr::filter(date < ymd('2023-02-01'))
   
   dat <- dat %>% dplyr::select(-c(mcnn, acnn, mcno3, acno3, mcno2, acno2, mcsrp, acsrp))
   
-  dat_int <- dat %>%
+  dat_int <- dat %>% dplyr::select(-date) %>% 
     mutate(across(everything(), ~ na.approx(., na.rm = FALSE)))
   
   str(dat_int)
   
   dat_int <- dat_int %>% mutate(actn = (if_else(actn > 300, 300, actn)))
   
-  dat_inc <- dat_int %>% mutate(across(everything(), ~. - mean(., na.rm = F))) %>% dplyr::select(-date)
+  dat_inc <- dat_int %>% mutate(across(everything(), ~. - mean(., na.rm = F)))
   
   ?if_else
   
 # Plot frequencies
   # select dat column
     colnames( dat_inc )
-    var <- 'amaxstage'
+    var <- 'gsmeanstage'
     x <- dat_inc[,var]
   # Fourier transform
     spec <- spectrum( x, method = 'pgram', plot = FALSE )
@@ -96,19 +96,34 @@ library(Rssa)
     #              , c(6,7)
     #              , c(10,11)
     #                 )
-    grp <- list( c(1), c(2,3,4,5), c(7,8,9)) #gchl
-    grp <- list( c(1,2,3), c(4,5,6), c(7,8,9)) #mctn
-    grp <- list( c(1,2), c(3,4,5,6, 7, 8,9,10)) #actn
-    grp <- list(c(1,4), c(2, 3), c(5,6), c(7,9), c(8,10), c(11,12,13)) #mctp
-    grp <- list(c(1,2), c(3,4), c(5, 6,9), c(7,8,10,11,12,13,14,15)) #actp
+    grp <- list( c(1,2,3,4,5), c(6,7), c(8, 9,10, 11, 12)) #gchl
+    grp <- list( c(1,2), c(3,4,5), c(6,7)) #mctn
+    grp <- list( c(1,2), c(3,4,5,6,9,10), c(7,8), c(11,12)) #actn
+    grp <- list(c(1,2,3,4), c(5,6,7,10), c(8,9)) #mctp
+    grp <- list(c(1,2), c(3,4,5,6,8), c(7,14), c(8,9,10,11,12,13)) #actp
     grp <- list(c(1,2), c(3, 4), c(5,6), c(7,8,9,10), c(11,12)) #mcsal
-    grp <- list(c(1,2), c(3, 4,5, 6,7,8), c(9,10,11)) #acsal
+    grp <- list(c(1,2), c(3, 4,5, 6)) #acsal
     grp <- list(c(1,4), c(2, 3,5)) #mcnh4
-    grp <- list(c(1,2,3,4), c(5), c(6,7), c(8,9), c(10,11)) #acnh4
-    grp <- list(c(1,2), c(3, 4,5, 6), c(7,8), c(9,10)) #acdoc
-    grp <- list(c(1,2), c(3, 4)) #aflow
-    grp <- list(c(1,2), c(3, 4), c(5,6), c(7,8), c(9,10)) #amaxstage
-    grp <- list(c(1,2), c(3, 4,5, 6,7,8), c(9,10,11)) #acsal
+    grp <- list(c(1,2,3,4), c(5,6), c(7,8,9,10)) #acnh4
+    grp <- list(c(1,2), c(3, 4,5, 6), c(7,8), c(9,10,11,12)) #acdoc
+    grp <- list(c(1,2), c(3, 4), c(5,6)) #aflow
+    grp <- list(c(1,2), c(3, 4), c(5,6), c(7,8, 9, 10)) #amaxstage
+    grp <- list(c(1,2), c(3, 4)) #aminstage
+    grp <- list(c(1,2,3), c(4,8,9,10,11), c(5,6,7), c(12,13)) #gTOC
+    grp <- list(c(1,2,3,4,5), c(6,7), c(8,9), c(10,11,12,13)) #gTP
+    grp <- list(c(1,2), c(3,4), c(5,6,7,8)) #gsal
+    grp <- list(c(1,2,3,6), c(4,5), c(7,8), c(9,10,11,12,13,14)) #gNH4
+    grp <- list(c(1,2), c(3,4), c(5,6), c(7,8,9,10,11,12)) #gpH
+    grp <- list(c(1,2), c(3,4,5,6,7), c(8,9), c(10,12), c(11)) #gTN
+    grp <- list(c(1,2), c(3,4), c(5,6), c(7,8)) #rTOC
+    grp <- list(c(1,2), c(3,4), c(5,6)) #rpH
+    grp <- list(c(1,2), c(3,4,5,6,7,8), c(9,10), c(11,12)) #rNH4
+    grp <- list(c(1,2), c(3,4,5,7,8,9), c(6,10), c(11,12)) #rTN
+    grp <- list(c(1,2), c(3,4), c(5,6,7,8)) #rchl
+    grp <- list(c(1,2), c(3,6,7,8,9), c(4,5)) #gsrainfall
+    grp <- list(c(1,2), c(3,4), c(5,6)) #gsmeanstage
+    grp <- list(c(1,2), c(3, 8,9), c(4,5,6,7)) #aminstage
+    grp <- list(c(1,2), c(3, 8,9), c(4,5,6,7)) #aminstage
 
   
 # SSA reconstruction
@@ -173,8 +188,8 @@ library(Rssa)
 
  ####   
     signal
-amaxstage<- data.frame(signal) %>% setNames('amaxstage')
+gsmeanstage<- data.frame(signal) %>% setNames('gsmeanstage')
 
-allssa <- cbind(gbchl, acs, mcs, gbtn, rbtn, gbphos, rbphos)
+allssa <- cbind(gchl, actn, actp, acsal, acnh4, acdoc, aflow, amaxstage, aminstage, gTOC, gTP, gsal, gNH4, gpH, gTN, rpH, rNH4, rTN, gsrainfall, gsmeanstage)
 
-write.csv(allssa, file = 'ssa_FB_ac.csv')
+write.csv(allssa, file = 'SSA_run1.csv')
