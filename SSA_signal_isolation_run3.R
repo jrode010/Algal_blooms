@@ -13,20 +13,21 @@ library(Rssa)
 
   str(dat)
   
-  
+  dat1 <- dat[-c(1:10), ]
+  dat1 <- dat1[-c(1:10),]
   dat_int <- dat %>% dplyr::select(-date) %>% 
     mutate(across(everything(), ~ na.approx(., na.rm = FALSE)))
   
   str(dat_int)
 
-  
-  dat_inc <- dat_int %>% mutate(across(everything(), ~. - mean(., na.rm = F)))
-  
+  dat_int <- dat_int %>% mutate(logactn = log(actn), logactp = log(actp), lograin = log(rainfall))
+  dat_int <- dat_int[-c(1:20), ]
+  dat_inc <- dat_int %>% mutate(across(everything(), ~(. - mean(., na.rm = F)))) 
   
 #### Plot frequencies####
   # select dat column
     colnames( dat_inc )
-    var <- 'gschlorophyll'
+    var <- 'gDO'
     x <- dat_inc[,var]
   # Fourier transform
     spec <- spectrum( x, method = 'pgram', plot = FALSE )
@@ -60,7 +61,7 @@ library(Rssa)
 ##
   # Set window length - window length has to be less than half of the time series and a multiple of the main component
     length( x )  
-    win <- 48
+    win <- 324
   # Decompose
     obj <- ssa( x, L = win, neig = win,
                 kind = 'toeplitz-ssa' )
@@ -76,7 +77,7 @@ library(Rssa)
     obj |> plot( type = 'vectors', numvectors = 16 )
     obj |> plot( type = 'paired', numvectors = 16 )
     # W-correlation matrix
-    obj |> plot( type = 'wcor' )
+    #obj |> plot( type = 'wcor' )
     wcor(obj,groups = 1:30) |> plot()
 
     
@@ -89,29 +90,29 @@ library(Rssa)
     #              , c(6,7)
     #              , c(10,11)
     #                 )
-    grp <- list( c(1,2), c(3,4,7,8,12,16), c(5,6,14), c(9,10,11), c(13,15)) #gchl
-    grp <- list( c(1,2), c(3,4,5), c(6,11,13), c(7,8,9,10,12)) #actn
-    grp <- list(c(1,2,3,4), c(5,6,7,8), c(9,10,11,12,13)) #actp
-    grp <- list(c(1,2,5,6,7), c(3,4), c(8,9,10,13,15)) #acnh4
-    grp <- list(c(1,2,3,4), c(5,6), c(7,8), c(9,10,11,12)) #acdoc
-    grp <- list(c(1,2), c(3, 4), c(5,6,7,8)) #aflow
-    grp <- list(c(1,2), c(3, 4,5,6), c(7,8,9), c(10,11)) #amaxstage
-    grp <- list(c(1,2), c(3, 4,5,6)) #aminstage
-    grp <- list(c(1,2), c(3,4,5,6,7,8,9), c(10,11)) #gTOC
-    grp <- list(c(1,2), c(3,4), c(5,7), c(6,12), c(8,9)) #gTP
-    grp <- list(c(1,3), c(2,4), c(5,6,7,8), c(9,10)) #gsal
-    grp <- list(c(1,2,3,11), c(4,5,10,13,16), c(6,8), c(7,9,12)) #gNH4
-    grp <- list(c(1,2), c(3,4), c(5,8,9,10,11,17), c(6,7)) #gpH
-    grp <- list(c(1,2), c(3,4,5,6), c(7,9), c(8,10,13,15), c(11,12), c(14)) #gTN
-    grp <- list(c(1,2,3,4,5,6), c(7,8), c(14)) #rTOC
-    grp <- list(c(1,2), c(3,4,6,10), c(5,7), c(8,9)) #rTP
-    grp <- list(c(1,2), c(3,4,5,6,7,8), c(9,10)) #rpH
-    grp <- list(c(1,2), c(3,4,5,7,8,9), c(6,10), c(11,12)) #rTN
-    grp <- list(c(1,2,4,5,6, 11, 14), c(7,9,14), c(8,10,12,13), c(15,16,17,18)) #rchl
-    grp <- list(c(1,2), c(3,4)) #gsrainfall
-    grp <- list(c(1,2)) #gstemperature
-    grp <- list(c(1,2), c(3,4)) #gsmeanstage
-    grp <- list(c(1,2), c(3,4), c(5,6,7,8,11), c(9,10)) #gschlorophyll
+    grp <- list( c(1,2,6,7), c(3,4,5,8,9,10), c(12,13,14,15,18,27,28,29, 19,23), c(16,18), c(20,21,24,26), c(22,25)) #actn
+    grp <- list( c(1,2), c(3,4,5,6,7,8), c(9,10,11,12,13,14)) #actp
+    grp <- list(c(1,2), c(3,4,5,6,7,10), c(8,9)) #gchl
+    grp <- list( c(1,2,6,7), c(3,4,5,6,7,10), c(8,9), c(11,14,15), c(12,13,23), c(16,19,20), c(17,18,21,22,26,27,28,33)) #gDO
+    grp <- list(c(1,2,7,8,9,10), c(3,4,5,6), c(11,12,13,14,15,16,17,18,19,20,23), c(21,22)) #gsal
+    grp <- list(c(1,2), c(3,4,5,6,7,8,9,10,11)) #gtemp
+    grp <- list(c(1,2), c(3, 4), c(5,6,7,8,9,10,11), c(12,13,14,15,16,17,21,27)) #gmeanstage
+    grp <- list(c(1,2), c(3, 4,5,7), c(6,8), c(9,10), c(11,12), c(13,14), c(15,16,17,18,19,20,28)) #acflow
+    grp <- list(c(1,2), c(3,4,5,6,7,8,11), c(9,10), c(12,13,14,15,16,17,21,25)) #acmaxstage
+    grp <- list(c(1,2), c(3,4), c(5,6,7,8,9,10,11), c(12,13), c(14,15,16,17,22,25), c(18,21), c(19,20,26,27)) #acminstage
+    # grp <- list(c(1,3), c(2,4), c(5,6,7,8), c(9,10)) #gsal
+    # grp <- list(c(1,2,3,11), c(4,5,10,13,16), c(6,8), c(7,9,12)) #gNH4
+    # grp <- list(c(1,2), c(3,4), c(5,8,9,10,11,17), c(6,7)) #gpH
+    # grp <- list(c(1,2), c(3,4,5,6), c(7,9), c(8,10,13,15), c(11,12), c(14)) #gTN
+    # grp <- list(c(1,2,3,4,5,6), c(7,8), c(14)) #rTOC
+    # grp <- list(c(1,2), c(3,4,6,10), c(5,7), c(8,9)) #rTP
+    # grp <- list(c(1,2), c(3,4,5,6,7,8), c(9,10)) #rpH
+    # grp <- list(c(1,2), c(3,4,5,7,8,9), c(6,10), c(11,12)) #rTN
+    # grp <- list(c(1,2,4,5,6, 11, 14), c(7,9,14), c(8,10,12,13), c(15,16,17,18)) #rchl
+    # grp <- list(c(1,2), c(3,4)) #gsrainfall
+    # grp <- list(c(1,2)) #gstemperature
+    # grp <- list(c(1,2), c(3,4)) #gsmeanstage
+    # grp <- list(c(1,2), c(3,4), c(5,6,7,8,11), c(9,10)) #gschlorophyll
 
   
 # SSA reconstruction
@@ -176,11 +177,11 @@ library(Rssa)
 
  ####   
     signal
-gschl<- data.frame(signal) %>% setNames('gschl')
+gDO<- data.frame(signal) %>% setNames('gDO')
 
-allssa <- cbind(gchl, actn, actp, acnh4, acdoc, aflow, amaxstage, aminstage, gTOC, gTP, gsal, gNH4, gpH, gTN, rTOC, rTP, rpH, gsrainfall, gsmeanstage, gstemp, gschl)
+allssa <- cbind(actn, actp, gchl, gDO, gsal, gtemp, gmeanstage, acflow, acmaxstage, acminstage)
 
-write.csv(allssa, file = 'SSA_run2.csv')
+write.csv(allssa, file = 'SSA_run3.csv')
 
-ssadates <- cbind(allssa, dat$date) %>% rename(date = `dat$date`)
-write.csv(ssadates, file = 'SSA_run2_dates.csv')
+ssadates <- cbind(allssa, dat1$date) %>% rename(date = `dat1$date`)
+write.csv(ssadates, file = 'SSA_run3_dates.csv')

@@ -389,4 +389,6 @@ acgsf3 <- merge(acgs3, aflowd, by = 'date') %>% dplyr::select(-Date)
 acgsfmax3 <- merge(acgsf3, amaxstaged, by = 'date') %>% dplyr::select(-Date)
 day3all <- merge(acgsfmax3, aminstaged, by = 'date') %>% dplyr::select(-Date)
 
+day3all <- day3all %>% dplyr::filter(date > as.Date('01/01/2016', format = '%m/%d/%Y'))
+
 write.csv(day3all, file = 'day3all_date.csv')
