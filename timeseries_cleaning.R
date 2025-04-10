@@ -360,3 +360,33 @@ ggsave(filename = "Chlorophyll_TP.png",
        path = "E:/FIU/PostDoc/FB_sediment_algal_blooms/Project/Imagery_proposal/",
        units="in", width=12, height=6, 
        dpi=300)
+
+####3 day time series for nutrients, flow, station data#####
+str(c3d)
+actn3 <- c3d %>% dplyr::select(AC.TN..µM., Date) %>% rename(actn = AC.TN..µM.) %>% mutate(date = as.Date(Date, format = '%m/%d/%Y'))
+actp3 <- c3d %>% dplyr::select(AC.FIU.TP..µM., Date) %>% rename(actp = AC.FIU.TP..µM.) %>% mutate(date = as.Date(Date, format = '%m/%d/%Y'))
+
+str(af)
+aflowd <- af %>% dplyr::filter(DBKEY == 'flow') %>% dplyr::select(Daily.Date, Data.Value) %>% 
+  rename(Date = Daily.Date, acflow = Data.Value) %>% mutate(date = as.Date(Date, format = '%m/%d/%Y'))
+amaxstaged <- af %>% dplyr::filter(DBKEY == 'maxstage') %>% dplyr::select(Daily.Date, Data.Value) %>% 
+  rename(Date = Daily.Date, acmaxstage = Data.Value) %>% mutate(date = as.Date(Date, format = '%m/%d/%Y'))
+aminstaged <- af %>% dplyr::filter(DBKEY == 'minstage') %>% dplyr::select(Daily.Date, Data.Value) %>% 
+  rename(Date = Daily.Date, acminstage = Data.Value) %>% mutate(date = as.Date(Date, format = '%m/%d/%Y'))
+
+str(gs)
+
+gschl <- gs %>% dplyr::select(-pH) %>% mutate(date = as.Date(date, format = '%m/%d/%Y'))
+
+actn3 <- actn3 %>% na.omit()
+actp3 <- actp3 %>% na.omit()
+
+ac3 <- merge(actn3, actp3, by = 'date') %>% dplyr::select(-c(Date.x, Date.y))
+
+acgs3 <- merge(ac3, gschl, by = 'date')
+
+acgsf3 <- merge(acgs3, aflowd, by = 'date') %>% dplyr::select(-Date)
+acgsfmax3 <- merge(acgsf3, amaxstaged, by = 'date') %>% dplyr::select(-Date)
+day3all <- merge(acgsfmax3, aminstaged, by = 'date') %>% dplyr::select(-Date)
+
+write.csv(day3all, file = 'day3all_date.csv')
