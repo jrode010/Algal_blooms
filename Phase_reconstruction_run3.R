@@ -12,7 +12,7 @@ library(plotly)
 # Load data and select column
 dat <- read.csv("SSA_run3.csv")
   colnames( dat )
-  var <- 'acminstage'
+  var <- 'gchl'
   x <- dat[,var] |> na.omit()
   x <- scale( x )
 

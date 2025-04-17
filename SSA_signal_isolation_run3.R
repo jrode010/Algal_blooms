@@ -27,7 +27,7 @@ library(Rssa)
 #### Plot frequencies####
   # select dat column
     colnames( dat_inc )
-    var <- 'gDO'
+    var <- 'chlorophyll'
     x <- dat_inc[,var]
   # Fourier transform
     spec <- spectrum( x, method = 'pgram', plot = FALSE )
@@ -160,7 +160,7 @@ library(Rssa)
     noise <- recon[[ length(recon) ]]
 
   # Plot signal with noise
-    par(mfrow=c(2,1))
+    par(mfrow=c(1,1))
     ylims2 <- range( x, signal, noise )
     plot( x, type = 'l', ylim = ylims2, las = 1,
           main = paste0("Signal (",round(sigstrength,2),"%)"),
