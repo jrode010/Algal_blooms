@@ -392,3 +392,289 @@ day3all <- merge(acgsfmax3, aminstaged, by = 'date') %>% dplyr::select(-Date)
 day3all <- day3all %>% dplyr::filter(date > as.Date('01/01/2016', format = '%m/%d/%Y'))
 
 write.csv(day3all, file = 'day3all_date.csv')
+
+####Graphs of time series for GEER####
+dat <- read.csv('coastal_data_month.csv')
+
+library(zoo)
+library(forecast)
+
+datg <- dat %>% dplyr::select(date, acsal, mcsal, acsalm, mcsalm, actnm, mctnm, actpm, mctpm, aflow, mflow, amaxstage, mmaxstage, gsmeanstage, gspH, tspH, tsmeanstage)
+datg$date <- ymd(datg$date)
+datg <- datg %>% filter(!is.na(date))
+
+#acsal
+acsal <- datg %>% dplyr::select(date, acsal) %>% filter(date > ymd('2009-02-01')) %>% filter(date < ymd('2024-06-01')) %>% mutate(acsal = na.approx(acsal, x = date))
+
+plot <- ggplot(acsal, aes(x = date, y = acsal)) +
+  geom_line(na.rm = T)
+plot
+
+summary(lm(acsal~date, data = acsal))
+
+ts_acsal <- ts(acsal$acsal, start = c(2009, 03), frequency = 12)
+plot(ts_acsal)
+
+fit <- tslm(ts_acsal ~ trend)
+summary(fit)
+
+decomp <- decompose(ts_acsal)  # for additive series
+plot(decomp)
+
+#mcsal
+mcsal <- datg %>% dplyr::select(date, mcsal) %>% filter(date > ymd('2008-11-01')) %>% filter(date < ymd('2024-06-01')) %>% mutate(mcsal = na.approx(mcsal, x = date))
+
+plot <- ggplot(mcsal, aes(x = date, y = mcsal)) +
+  geom_line(na.rm = T)
+plot
+
+summary(lm(mcsal~date, data = mcsal))
+
+#acsalm
+acsalm <- datg %>% dplyr::select(date, acsalm) %>% filter(date > ymd('2009-03-01')) %>% filter(date < ymd('2024-06-01')) %>% mutate(acsalm = na.approx(acsalm, x = date))
+
+plot <- ggplot(acsalm, aes(x = date, y = acsalm)) +
+  geom_line(na.rm = T)
+plot
+
+summary(lm(acsalm~date, data = acsalm))
+
+#mcsalm
+mcsalm <- datg %>% dplyr::select(date, mcsalm) %>% filter(date > ymd('2008-11-01')) %>% filter(date < ymd('2024-06-01')) %>% mutate(mcsalm = na.approx(mcsalm, x = date))
+
+plot <- ggplot(mcsalm, aes(x = date, y = mcsalm)) +
+  geom_line(na.rm = T)
+plot
+
+summary(lm(mcsalm~date, data = mcsalm))
+
+#actnm
+actnm <- datg %>% dplyr::select(date, actnm) %>% filter(date > ymd('2009-03-01')) %>% filter(date < ymd('2024-06-01')) %>% mutate(actnm = na.approx(actnm, x = date))
+
+plot <- ggplot(actnm, aes(x = date, y = actnm)) +
+  geom_line(na.rm = T)
+plot
+
+summary(lm(actnm~date, data = actnm))
+
+#mctnm
+mctnm <- datg %>% dplyr::select(date, mctnm) %>% filter(date > ymd('2008-11-01')) %>% filter(date < ymd('2024-06-01')) %>% mutate(mctnm = na.approx(mctnm, x = date))
+
+plot <- ggplot(mctnm, aes(x = date, y = mctnm)) +
+  geom_line(na.rm = T)
+plot
+
+summary(lm(mctnm~date, data = mctnm))
+
+#actpm
+actpm <- datg %>% dplyr::select(date, actpm) %>% filter(date > ymd('2009-03-01')) %>% filter(date < ymd('2024-06-01')) %>% mutate(actpm = na.approx(actpm, x = date)) %>% mutate(actpm = if_else(actpm > 10, 7.5, actpm))
+
+plot <- ggplot(actpm, aes(x = date, y = actpm)) +
+  geom_line(na.rm = T)
+plot
+
+summary(lm(actpm~date, data = actpm))
+
+#mctpm
+mctpm <- datg %>% dplyr::select(date, mctpm) %>% filter(date > ymd('2008-11-01')) %>% filter(date < ymd('2024-06-01')) %>% mutate(mctpm = na.approx(mctpm, x = date))
+
+plot <- ggplot(mctpm, aes(x = date, y = mctpm)) +
+  geom_line(na.rm = T)
+plot
+
+summary(lm(mctpm~date, data = mctpm))
+
+#aflow
+aflow <- datg %>% dplyr::select(date, aflow) %>% filter(date > ymd('2007-03-01')) %>% mutate(aflow = na.approx(aflow, x = date))
+
+plot <- ggplot(aflow, aes(x = date, y = aflow)) +
+  geom_line(na.rm = T)
+plot
+
+summary(lm(aflow~date, data = aflow))
+
+#mflow
+mflow <- datg %>% dplyr::select(date, mflow) %>% filter(date > ymd('1995-09-01')) %>% mutate(mflow = na.approx(mflow, x = date))
+
+plot <- ggplot(mflow, aes(x = date, y = mflow)) +
+  geom_line(na.rm = T)
+plot
+
+summary(lm(mflow~date, data = mflow))
+
+#amaxstage
+amaxstage <- datg %>% dplyr::select(date, amaxstage) %>% filter(date > ymd('2007-03-01')) %>% mutate(amaxstage = na.approx(amaxstage, x = date))
+
+plot <- ggplot(amaxstage, aes(x = date, y = amaxstage)) +
+  geom_line(na.rm = T)
+plot
+
+summary(lm(amaxstage~date, data = amaxstage))
+
+#mmaxstage
+mmaxstage <- datg %>% dplyr::select(date, mmaxstage) %>% filter(date > ymd('1995-09-01')) %>% mutate(mmaxstage = na.approx(mmaxstage, x = date))
+
+plot <- ggplot(mmaxstage, aes(x = date, y = mmaxstage)) +
+  geom_line(na.rm = T)
+plot
+
+summary(lm(mmaxstage~date, data = mmaxstage))
+
+#gsmeanstage
+gsmeanstage <- datg %>% dplyr::select(date, gsmeanstage) %>% filter(date > ymd('2010-12-01')) %>% filter(date < ymd('2024-12-01')) %>% mutate(gsmeanstage = na.approx(gsmeanstage, x = date))
+
+plot <- ggplot(gsmeanstage, aes(x = date, y = gsmeanstage)) +
+  geom_line(na.rm = T)
+plot
+
+summary(lm(gsmeanstage~date, data = gsmeanstage))
+
+#tsmeanstage
+tsmeanstage <- datg %>% dplyr::select(date, tsmeanstage) %>% filter(date > ymd('2010-12-01')) %>% filter(date < ymd('2024-12-01')) %>% mutate(tsmeanstage = na.approx(tsmeanstage, x = date))
+
+plot <- ggplot(tsmeanstage, aes(x = date, y = tsmeanstage)) +
+  geom_line(na.rm = T)
+plot
+
+summary(lm(tsmeanstage~date, data = tsmeanstage))
+
+#gspH
+gspH <- datg %>% dplyr::select(date, gspH) %>% filter(date > ymd('2011-01-01')) %>% filter(date < ymd('2024-12-01')) %>% mutate(gspH = na.approx(gspH, x = date))
+
+plot <- ggplot(gspH, aes(x = date, y = gspH)) +
+  geom_line(na.rm = T)
+plot
+
+summary(lm(gspH~date, data = gspH))
+
+#tspH
+tspH <- datg %>% dplyr::select(date, tspH) %>% filter(date > ymd('2010-12-01')) %>% filter(date < ymd('2024-12-01')) %>% mutate(tspH = na.approx(tspH, x = date))
+
+plot <- ggplot(tspH, aes(x = date, y = tspH)) +
+  geom_line(na.rm = T)
+plot
+
+summary(lm(tspH~date, data = tspH))
+
+#Significant trends = TN, TP, Stage for all 4, and pH
+#Let's graph!
+
+plot  <- ggplot(actnm, aes(x = date, y = actnm)) +
+  geom_line(na.rm = T)+
+  geom_smooth(method = "lm", se = TRUE, color = "blue") +
+  geom_vline(xintercept = ymd('2015-07-01'), color = 'darkred', linetype = 'dashed')+
+  geom_vline(xintercept = ymd('2017-09-01'), color = 'darkred', linetype = 'dashed')+
+  labs(x = "Date", y = "Total Nitrogen")+
+  theme_classic() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  
+plot
+
+ggsave(filename = 'plots/GEER/actn.png', height = 4, width = 6)
+
+plot  <- ggplot(mctnm, aes(x = date, y = mctnm)) +
+  geom_line(na.rm = T)+
+  geom_smooth(method = "lm", se = TRUE, color = "blue") +
+  geom_vline(xintercept = ymd('2015-07-01'), color = 'darkred', linetype = 'dashed')+
+  geom_vline(xintercept = ymd('2017-09-01'), color = 'darkred', linetype = 'dashed')+
+  labs(x = "Date", y = "Total Nitrogen")+
+  theme_classic() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  
+plot
+
+ggsave(filename = 'plots/GEER/mctn.png', height = 4, width = 6)
+
+plot  <- ggplot(actpm, aes(x = date, y = actpm)) +
+  geom_line(na.rm = T)+
+  geom_smooth(method = "lm", se = TRUE, color = "blue") +
+  geom_vline(xintercept = ymd('2015-07-01'), color = 'darkred', linetype = 'dashed')+
+  geom_vline(xintercept = ymd('2017-09-01'), color = 'darkred', linetype = 'dashed')+
+  labs(x = "Date", y = "Total Phosphorus")+
+  theme_classic() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  
+plot
+
+ggsave(filename = 'plots/GEER/actp.png', height = 4, width = 6)
+
+plot  <- ggplot(mctpm, aes(x = date, y = mctpm)) +
+  geom_line(na.rm = T)+
+  geom_smooth(method = "lm", se = TRUE, color = "blue") +
+  geom_vline(xintercept = ymd('2015-07-01'), color = 'darkred', linetype = 'dashed')+
+  geom_vline(xintercept = ymd('2017-09-01'), color = 'darkred', linetype = 'dashed')+
+  labs(x = "Date", y = "Total Phosphorus")+
+  theme_classic() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  
+plot
+
+ggsave(filename = 'plots/GEER/mctp.png', height = 4, width = 6)
+
+plot  <- ggplot(amaxstage, aes(x = date, y = amaxstage)) +
+  geom_line(na.rm = T)+
+  geom_smooth(method = "lm", se = TRUE, color = "blue") +
+  geom_vline(xintercept = ymd('2015-07-01'), color = 'darkred', linetype = 'dashed')+
+  geom_vline(xintercept = ymd('2017-09-01'), color = 'darkred', linetype = 'dashed')+
+  labs(x = "Date", y = "Stage")+
+  theme_classic() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  
+plot
+
+ggsave(filename = 'plots/GEER/acstage.png', height = 4, width = 6)
+
+plot  <- ggplot(mmaxstage, aes(x = date, y = mmaxstage)) +
+  geom_line(na.rm = T)+
+  geom_smooth(method = "lm", se = TRUE, color = "blue") +
+  geom_vline(xintercept = ymd('2015-07-01'), color = 'darkred', linetype = 'dashed')+
+  geom_vline(xintercept = ymd('2017-09-01'), color = 'darkred', linetype = 'dashed')+
+  labs(x = "Date", y = "Stage")+
+  theme_classic() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  
+plot
+
+ggsave(filename = 'plots/GEER/mcstage.png', height = 4, width = 6)
+
+plot  <- ggplot(gsmeanstage, aes(x = date, y = gsmeanstage)) +
+  geom_line(na.rm = T)+
+  geom_smooth(method = "lm", se = TRUE, color = "blue") +
+  geom_vline(xintercept = ymd('2015-07-01'), color = 'darkred', linetype = 'dashed')+
+  geom_vline(xintercept = ymd('2017-09-01'), color = 'darkred', linetype = 'dashed')+
+  labs(x = "Date", y = "Stage")+
+  theme_classic() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  
+plot
+
+ggsave(filename = 'plots/GEER/gstage.png', height = 4, width = 6)
+
+plot  <- ggplot(tsmeanstage, aes(x = date, y = tsmeanstage)) +
+  geom_line(na.rm = T)+
+  geom_smooth(method = "lm", se = TRUE, color = "blue") +
+  geom_vline(xintercept = ymd('2015-07-01'), color = 'darkred', linetype = 'dashed')+
+  geom_vline(xintercept = ymd('2017-09-01'), color = 'darkred', linetype = 'dashed')+
+  labs(x = "Date", y = "Stage")+
+  theme_classic() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  
+plot
+
+ggsave(filename = 'plots/GEER/tstage.png', height = 4, width = 6)
+
+plot  <- ggplot(gspH, aes(x = date, y = gspH)) +
+  geom_line(na.rm = T)+
+  geom_smooth(method = "lm", se = TRUE, color = "blue") +
+  geom_vline(xintercept = ymd('2015-07-01'), color = 'darkred', linetype = 'dashed')+
+  geom_vline(xintercept = ymd('2017-09-01'), color = 'darkred', linetype = 'dashed')+
+  labs(x = "Date", y = "Stage")+
+  theme_classic() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  
+plot
+
+ggsave(filename = 'plots/GEER/gpH.png', height = 4, width = 6)
+
+plot  <- ggplot(tspH, aes(x = date, y = tspH)) +
+  geom_line(na.rm = T)+
+  geom_smooth(method = "lm", se = TRUE, color = "blue") +
+  geom_vline(xintercept = ymd('2015-07-01'), color = 'darkred', linetype = 'dashed')+
+  geom_vline(xintercept = ymd('2017-09-01'), color = 'darkred', linetype = 'dashed')+
+  labs(x = "Date", y = "Stage")+
+  theme_classic() + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  
+plot
+
+ggsave(filename = 'plots/GEER/tpH.png', height = 4, width = 6)
