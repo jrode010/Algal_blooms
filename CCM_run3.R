@@ -8,6 +8,9 @@ library(rEDM)
 dat <- read.csv("SSA_run3_dates.csv")
 colnames( dat )
 
+ggplot(dat, aes(x = ymd(date), y = gchl))+
+  geom_line()
+
 # Select variables for CCM test
 y <- "gmeanstage"  # effect
 x <- "acminstage"  # cause
@@ -59,3 +62,48 @@ plot( x = ccm$LibMeans$LibSize,
          lwd = 3, col = 1 )
 
 
+  loopccmlag3day <- function(dat, x, y, z){ # x = cause (string), y = effect (string)
+    
+    df1 <- dat %>%
+      dplyr::select(date, !!sym(x), !!sym(y)) %>%
+      dplyr::rename(xvar = !!sym(x), yvar = !!sym(y))  # consistent column names for lag and ccm
+    
+    df1$date <- ymd(df1$date)
+    df1[, c("xvar", "yvar")] <- scale(df1[, c("xvar", "yvar")])
+    
+    df <- data.frame('lag' = NA, 'pred' = NA, 'sdpred' = NA)
+    
+    for(i in 0:z){
+      df2 <- df1 %>%
+        mutate(ll = lag(xvar, i)) %>%
+        dplyr::select(date, yvar, ll) %>%
+        drop_na()
+      libsize_str <- paste("10", nrow(df2)-30, "10")
+      ccm <- CCM(dataFrame = df2,
+                 E = 2, # embedding dimension
+                 tau = -15, # embedding delay
+                 exclusionRadius = 63,  # Theiler window
+                 target = "ll",       
+                 libSizes = libsize_str,
+                 columns = 'yvar',
+                 sample = 100,
+                 showPlot = FALSE,
+                 parameterList = TRUE,
+                 includeData = TRUE)
+      
+      df_ccm <- data.frame('lag' = i,
+                           'pred' = mean(ccm$LibMeans[,2]),
+                           'sdpred' = sd(ccm$LibMeans[,2]))
+      
+      df <- rbind(df, df_ccm)
+    }
+    
+    return(df)
+  }
+
+  actn3gchl <- loopccmlag3day(dat, 'actn', 'gchl', 30)
+  actp3gchl <- loopccmlag3day(dat, 'actp', 'gchl', 30)
+  gstage3gchl <- loopccmlag3day(dat, 'gmeanstage', 'gchl', 30)  
+  acflow3gchl <- loopccmlag3day(dat, 'acflow', 'gchl', 30)  
+  acmaxstage3gchl <- loopccmlag3day(dat, 'acmaxstage', 'gchl', 30)  
+  
