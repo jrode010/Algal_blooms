@@ -5,7 +5,7 @@ library(rEDM)
 
 
 # Load data
-dat <- read.csv("SSA_run3_dates.csv")
+dat <- read.csv("C:/Users/jonro/OneDrive/Desktop/Algal_blooms/SSA_run3_dates.csv")
 colnames( dat )
 
 ggplot(dat, aes(x = ymd(date), y = gchl))+

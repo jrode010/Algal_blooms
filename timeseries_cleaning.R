@@ -7,6 +7,7 @@ library(tidyverse)
 library(lubridate)
 library(plotly)
 library(htmlwidgets)
+library(zoo)
 
 ##So we have uploaded all of the data into the folder. I have cleaned some of the files. 
 ##First thing is to plot all of the easy data. So bring in:
@@ -27,6 +28,7 @@ tg <- read.csv(file = 'Data/Clean/TB_grab.csv') #monthly grab sample data in Ter
 gs <- read.csv(file = 'Data/Clean/GB_station.csv') #Daily station data (CHL, DO, Rainfall, salinity, temperature, stage) for Garfield
 ts <- read.csv(file = 'Data/Clean/TB_station.csv') #Daily station data (CHL, DO, Rainfall, salinity, temperature, stage) for Terrapin
 mr <- read.csv(file = 'Data/Clean/Marsh_CHP_rain.csv') #Daily rainfall in the Marsh at CHP
+gg2 <- read.csv(file = 'Data/Clean/GB_grab2.csv')
 
 ##Now we have the easy stuff in, let's clean it all up, subsample to monthly, and plot
 ##
@@ -88,8 +90,10 @@ flow <- reduce(flowlist, full_join, by = "date")
 #now let's do grab samples
 head(gg)
 
-ggdat <- mon_fun2(gg, Collection_Date, Test.Name, Value, 'mean') %>% filter(Test.Name != "") %>% pivot_wider(names_from = Test.Name, values_from = mean) #%>% rename(aflow = flow, amaxstage = maxstage, aminstage = minstage)
+gg2dat <- mon_fun2(gg2, collectDate, parameter, value, 'mean') %>% filter(parameter != "") %>% pivot_wider(names_from = parameter, values_from = mean) #%>% rename(aflow = flow, amaxstage = maxstage, aminstage = minstage)
 str(ggdat)
+ggdat <- mon_fun2(gg, Collection_Date, Test.Name, Value, 'mean') %>% filter(Test.Name != "") %>% pivot_wider(names_from = Test.Name, values_from = mean) #%>% rename(aflow = flow, amaxstage = maxstage, aminstage = minstage)
+
 colnames(ggdat) <- c('date', 'gTOC', 'trashchl', 'gDO', 'ktn', 'gNN', 'gNO3', 'gNO2', 'gTP', 'gsal', 'gturb', 'gtemp', 'gNH4', 'gAP', 'gOP', 'gsil', 'tn', 'gpH', 'gcar', 'trashchl2', 'trashchl3', 'trashchlb', 'trashchlc', 'trashph', 'gsecchi', 'con', 'gdepth', 'gchl', 'gchlb', 'gpheo', 'al', 'cal', 'chlor', 'hard', 'mg', 'pot', 'sod', 'sul', 'ds')
 str(ggdat)
 
@@ -678,3 +682,30 @@ plot  <- ggplot(tspH, aes(x = date, y = tspH)) +
 plot
 
 ggsave(filename = 'plots/GEER/tpH.png', height = 4, width = 6)
+
+####Adding lagged data for EDM analysis####
+##Monthly
+dat <- read.csv(file = 'coastal_data_month.csv')
+head(dat)
+#clean and add in missing data
+
+dat <- dat %>% dplyr::select(-c(oflow, omaxstage, omeanstage, ominstage, wflow, wmeanstage, gNN, gNO3, gNO2, gAP, gOP, rNN, rNO3, rNO2, rAP, rOP, gchlb, rchlb, tNN, tNO3, tNO2, tAP, tOP, tchlb))
+
+str(dat)
+
+dat <- dat %>% dplyr::filter(date > ymd('2011-01-01'))
+dat <- dat %>% dplyr::filter(date < ymd('2023-02-01'))
+
+dat <- dat %>% dplyr::select(-c(mcnn, acnn, mcno3, acno3, mcno2, acno2, mcsrp, acsrp))
+
+dat_int <- dat %>% dplyr::select(-date) %>% 
+  mutate(across(everything(), ~ na.approx(., na.rm = FALSE)))
+
+str(dat_int)
+
+dat_int <- dat_int %>% mutate(actn = (if_else(actn > 300, 300, actn)))
+
+#now add some lagged columns
+
+dat_inc <- dat_int %>% mutate(across(everything(), ~. - mean(., na.rm = F)))
+str(dat_inc)
