@@ -685,7 +685,7 @@ ggsave(filename = 'plots/GEER/tpH.png', height = 4, width = 6)
 
 ####Adding lagged data for EDM analysis####
 ##Monthly
-dat <- read.csv(file = 'coastal_data_month.csv')
+data_all <- read.csv(file = 'coastal_data_month.csv')
 head(dat)
 #clean and add in missing data
 
