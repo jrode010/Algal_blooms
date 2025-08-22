@@ -386,6 +386,19 @@ rho_lagleadfun_parallel <- function(dat, x, y, E, tau, er, NSURR, z){
       # you can also set: future.scheduling = 1 to split work evenly across workers
     )
     
+    ccm_real <- CCM( dataFrame = df2,
+                     E = E,   # embedding dimension
+                     tau = -tau,   # embedding delay
+                     exclusionRadius = er,   # Theiler window
+                     target = colnames(df2)[2],   # prediction target (cause)
+                     columns = colnames(df2)[1],   # library (effect) 
+                     libSizes = libsize_str,  # string for sequence 'from, to, by'
+                     sample = 100,   # number of replicate tests at each libSize
+                     parameterList = TRUE,
+                     includeData = TRUE,
+                     noTime = TRUE
+    )
+    true_rho <- ccm_real$LibMeans[nrow(ccm_real$LibMeans),2]
     # Compute p-value
     k <- which(rho_surr >= true_rho ) %>% length()  # number of surrogate rho values exceeding the library's rho
     dp <- data.frame('laglead' = j, 'p_value' = (k+1)/(NSURR+1))  # p-value: (k+1)/(n+1) where k is number of 'successes' and NSURR is total number of surrogates
@@ -408,6 +421,7 @@ rhorchlgTOC <- rho_lagleadfun_parallel(dat, 'gTOC', 'rchl', 3,3,2,100,12)
 rhorchlgTP <- rho_lagleadfun_parallel(dat, 'gTP', 'rchl', 3,3,2,100,12)
 rhorchlgsal <- rho_lagleadfun_parallel(dat, 'gsal', 'rchl', 3,3,2,100,12)
 rhorchlarea <- rho_lagleadfun_parallel(dat, 'mean_area', 'rchl', 3,3,2,100,12)
+rhorchlgchl <- rho_lagleadfun_parallel(dat, 'gchl', 'rchl', 3,3,2,100,12)
 #gchl
 rhogchlaflow <- rho_lagleadfun_parallel(dat, 'aflow', 'gchl', 4,3,4,100,12)
 rhogchlarea <- rho_lagleadfun_parallel(dat, 'mean_area', 'gchl', 4,3,4,100,12)
@@ -445,6 +459,7 @@ rhoarearTOC <- rho_lagleadfun_parallel(dat, 'rTOC', 'mean_area', 3,4,5,100,12)
 rhoarearTP <- rho_lagleadfun_parallel(dat, 'rTP', 'mean_area', 3,4,5,100,12)
 rhoareaspeed <- rho_lagleadfun_parallel(dat, 'speed', 'mean_area', 3,4,5,100,12)
 rhoarearpH <- rho_lagleadfun_parallel(dat, 'rpH', 'mean_area', 3,4,5,100,12)
-#Run in parallel
 
+future::plan(sequential)
 
+?SMap
