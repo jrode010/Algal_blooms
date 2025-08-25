@@ -462,4 +462,142 @@ rhoarearpH <- rho_lagleadfun_parallel(dat, 'rpH', 'mean_area', 3,4,5,100,12)
 
 future::plan(sequential)
 
-?SMap
+
+
+
+# x: data with cols laglead, pred, sdpred
+# p_df: data with cols laglead and p (p-values)
+graphlag <- function(x, p_df = NULL) {
+  #Title from the symbol name used for `x`
+  plot_title <- deparse(substitute(x))
+  
+  #Merge in p-values and make significance labels (if provided)
+  dat <- x
+  if (!is.null(p_df)) {
+    dat <- dat %>%
+      left_join(p_df, by = "laglead") %>%
+      mutate(sig_lbl = case_when(
+        !is.na(p_value) & p_value <= 0.05  ~ "*",
+        TRUE                   ~ ""
+      ))
+  } else {
+    dat <- dat %>% mutate(sig_lbl = "")
+  }
+  dat <- dat %>% filter(laglead <= 2)
+  # vertical offset so the asterisks clear the error bars
+  y_pad <- diff(range(dat$pred, na.rm = TRUE)) * 0.04
+  dat <- dat %>% mutate(y_aster = pred + sdpred + y_pad)
+  
+  ggplot(dat, aes(x = laglead, y = pred)) +
+    geom_point(color = "blue", size = 1.5) +
+    geom_errorbar(aes(ymin = pred - sdpred, ymax = pred + sdpred),
+                  width = 0.5, color = "darkgray") +
+    geom_line(color = "black", linewidth = 1) +
+    geom_hline(yintercept = 0) +
+    # asterisks (only where non-empty)
+    geom_text(aes(y = y_aster, label = sig_lbl),
+              vjust = -0.2, size = 4, na.rm = TRUE) +
+    scale_x_continuous(breaks = seq(-12, 12, by = 2)) +
+    labs(
+      title = plot_title,
+      x = "Lag (1 month)",
+      y = "Prediction skill"
+    ) +
+    coord_cartesian(clip = "off") + # avoid clipping asterisks at top
+    theme_classic() +
+    theme(
+      axis.title = element_text(face = "bold"),
+      plot.margin = margin(10, 20, 10, 10)
+    )
+}
+
+gacdocarea <- graphlag(acdocarea, rhoareaacdoc) #yes
+gacdocarea
+ggtocarea <- graphlag(gTOCarea, rhoareagTOC) #yes
+ggtocarea
+gmcdocarea <- graphlag(mcdocarea, rhoareamcdoc) #yes
+gmcdocarea
+gmmaxstagearea <- graphlag(mmaxstagearea, rhoareammaxstage) #yes
+gmmaxstagearea
+gamaxstagearea <- graphlag(amaxstagearea, rhoareaamaxstage) #yes
+gamaxstagearea
+ggsmeanstagearea <- graphlag(gsmeanstagearea, rhoareagsmeanstage) #yesish
+ggsmeanstagearea
+grchlarea <- graphlag(rchlarea, rhoarearchl) #yes
+grchlarea
+grtnarea <- graphlag(rTNarea, rhoarearTN) #yes
+grtnarea
+grtocarea <- graphlag(rTOCarea, rhoarearTOC) #yes
+grtocarea
+grtparea <- graphlag(rTParea, rhoarearTP) #yes
+grtparea
+gareagchl <- graphlag(areagchl, rhogchlarea) #yes
+gareagchl
+ggphgchl <- graphlag(gpHgchl, rhogchlgpH) #yes
+ggphgchl
+ggsalgchl <- graphlag(gsalgchl, rhogchlgsal) #ish
+ggsalgchl
+ggtngchl <- graphlag(gTNgchl, rhogchlgTN) #yes
+ggtngchl
+ggtocgchl <- graphlag(gTOCgchl, rhogchlgTOC) #yes
+ggtocgchl
+ggtpgchl <- graphlag(gTPgchl, rhogchlgTP) #yes
+ggtpgchl
+grsalgchl <- graphlag(rsalgchl, rhogchlrsal) #no
+grsalgchl
+gacdocnorthing <- graphlag(acdocnorthing, rhonorthingacdoc) #yes
+gacdocnorthing
+gactnnorthing <- graphlag(actnnorthing, rhonorthingactn) #no
+gactnnorthing
+grsalnorthing <- graphlag(rsalnorthing, rhonorthingrsal) #yes
+grsalnorthing
+garearchl <- graphlag(arearchl, rhorchlarea) #yes
+garearchl
+ggsalrchl <- graphlag(gsalrchl, rhorchlgsal) #no
+ggsalrchl
+ggtnrchl <- graphlag(gTNrchl, rhorchlgTN) #yes
+ggtnrchl
+ggtocrchl <- graphlag(gTOCrchl, rhorchlgTOC) #yes
+ggtocrchl
+ggtprchl <- graphlag(gTPrchl, rhorchlgTP) #yes
+ggtprchl
+ggchlrchl <- graphlag(gchlrchl, rhorchlgchl) #yes
+ggchlrchl
+grtnrchl <- graphlag(rTNrchl, rhorchlrTN) #yes
+grtnrchl
+grtocrchl <- graphlag(rTOCrchl, rhorchlrTOC) #yes
+grtocrchl
+grtprchl <- graphlag(rTPrchl, rhorchlrTP) #yes
+grtprchl
+
+ggsave(filename = 'plots/acdocarea_lag.png', plot = gacdocarea)
+ggsave(filename = 'plots/gtocarea_lag.png', plot = ggtocarea)
+ggsave(filename = 'plots/mcdocarea_lag.png', plot = gmcdocarea)
+ggsave(filename = 'plots/mmaxstagearea_lag.png', plot = gmmaxstagearea)
+ggsave(filename = 'plots/amaxstagearea_lag.png', plot = gamaxstagearea)
+ggsave(filename = 'plots/gsmeanstagearea_lag.png', plot = ggsmeanstagearea)
+ggsave(filename = 'plots/rchlarea_lag.png', plot = grchlarea)
+ggsave(filename = 'plots/rtnarea_lag.png', plot = grtnarea)
+ggsave(filename = 'plots/rtocarea_lag.png', plot = grtocarea)
+ggsave(filename = 'plots/rtparea_lag.png', plot = grtparea)
+ggsave(filename = 'plots/areagchl_lag.png', plot = gareagchl)
+ggsave(filename = 'plots/gphgchl_lag.png', plot = ggphgchl)
+ggsave(filename = 'plots/gsalgchl_lag.png', plot = ggsalgchl)
+ggsave(filename = 'plots/gtngchl_lag.png', plot = ggtngchl)
+ggsave(filename = 'plots/gtocgchl_lag.png', plot = ggtocgchl)
+ggsave(filename = 'plots/gtpgchl_lag.png', plot = ggtpgchl)
+ggsave(filename = 'plots/rsalgchl_lag.png', plot = grsalgchl)
+ggsave(filename = 'plots/acdocnorthing_lag.png', plot = gacdocnorthing)
+ggsave(filename = 'plots/actnnorthing_lag.png', plot = gactnnorthing)
+ggsave(filename = 'plots/rsalnorthing_lag.png', plot = grsalnorthing)
+ggsave(filename = 'plots/arearchl_lag.png', plot = garearchl)
+ggsave(filename = 'plots/gsalrchl_lag.png', plot = ggsalrchl)
+ggsave(filename = 'plots/gtnrchl_lag.png', plot = ggtnrchl)
+ggsave(filename = 'plots/gtocrchl_lag.png', plot = ggtocrchl)
+ggsave(filename = 'plots/gtprchl_lag.png', plot = ggtprchl)
+ggsave(filename = 'plots/gchlrchl_lag.png', plot = ggchlrchl)
+ggsave(filename = 'plots/rtnrchl_lag.png', plot = grtnrchl)
+ggsave(filename = 'plots/rtocrchl_lag.png', plot = grtocrchl)
+ggsave(filename = 'plots/rtprchl_lag.png', plot = grtprchl)
+
+
