@@ -167,6 +167,7 @@ plot( x = ccm$LibMeans$LibSize,
   rpHarea <- loopccmlaglead(dat, 'rpH', 'mean_area', 12,3,4,5)
   gpHarea <- loopccmlaglead(dat, 'gpH', 'mean_area', 12,3,4,5)
   gsrainfallarea <- loopccmlaglead(dat, 'gsrainfall', 'mean_area', 12,3,4,5)
+  acnh4area <- loopccmlaglead(dat, 'acnh4', 'mean_area', 12,3,4,5)
   
 #Northing. e = 3, t = 2, er = 4
   actpnorthing <- loopccmlaglead(dat, 'actp', 'northing', 12,3,2,4)
@@ -220,6 +221,7 @@ plot( x = ccm$LibMeans$LibSize,
   rpHrchl <- loopccmlaglead(dat, 'rpH', 'rchl', 12,3,3,2)
   gpHrchl <- loopccmlaglead(dat, 'gpH', 'rchl', 12,3,3,2)
   gsrainfallrchl <- loopccmlaglead(dat, 'gsrainfall', 'rchl', 12,3,3,2)
+  acnh4rchl <- loopccmlaglead(dat, 'acnh4', 'rchl', 12,3,3,2)
  
   #Loops for gchl: e = 4, t = 3, er = 4
   actpgchl <- loopccmlaglead(dat, 'actp', 'gchl', 12,4,3,4)
@@ -249,7 +251,7 @@ plot( x = ccm$LibMeans$LibSize,
   rpHgchl <- loopccmlaglead(dat, 'rpH', 'gchl', 12,4,3,4)
   gpHgchl <- loopccmlaglead(dat, 'gpH', 'gchl', 12,4,3,4)
   gsrainfallgchl <- loopccmlaglead(dat, 'gsrainfall', 'gchl', 12,4,3,4)
-  
+  acnh4gchl <- loopccmlaglead(dat, 'acnh4', 'gchl', 12,4,3,4)
  
   
   graphlag <- function(x){
