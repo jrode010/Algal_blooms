@@ -276,7 +276,7 @@ breakpoint_analysis_chl <- function(
 
 #run the breakpoint analysis - garfield
 out_bic <- breakpoint_analysis_chl(
-  dat3, date_col="date", value_col="rchl",
+  dat3, date_col="date", value_col="gchl",
   min_seg_months=12, max_breaks=6,
   deseason_stl=TRUE, ic="BIC"
 )
@@ -287,14 +287,14 @@ out_bic$test_global_mean
 
 # --- inputs (match what you used) ---
 h  <- 12                     # min_seg_months
-df <- dat3 %>% select(date, rchl)
+df <- dat3 %>% select(date, gchl)
 
 # 1) Monthly regularization (same as function)
 m_dat <- df %>%
   mutate(date = as.Date(date),
          ym   = as.yearmon(date)) %>%
   group_by(ym) %>%
-  summarise(chl = mean(rchl, na.rm = TRUE), .groups = "drop") %>%
+  summarise(chl = mean(gchl, na.rm = TRUE), .groups = "drop") %>%
   arrange(ym) %>%
   mutate(date = as.Date(ym))
 
@@ -357,5 +357,60 @@ seg_summary <- purrr::map_dfr(seq_len(length(cuts)-1), function(j){
 
 seg_summary
 
+ggplot() +
+  geom_line(data = dat3, aes(x = date, y = gchl), color = "darkgreen") +
+  # horizontal means
+  geom_segment(aes(x = ymd("2011-02-01"), xend = ymd("2016-05-01"),
+                   y = 1.49, yend = 1.49)) +
+  geom_segment(aes(x = ymd("2016-06-01"), xend = ymd("2024-12-01"),
+                   y = 9.04, yend = 9.04)) +
+  # CIs as rectangles (was ribbon)
+  annotate("rect", xmin = ymd("2011-02-01"), xmax = ymd("2016-05-01"),
+           ymin = 1.302, ymax = 1.678, alpha = 0.3) +
+  annotate("rect", xmin = ymd("2016-06-01"), xmax = ymd("2024-12-01"),
+           ymin = 8.0685, ymax = 10.01, alpha = 0.3) +
+  # breakpoint and its CI window
+  geom_vline(xintercept = as.Date("2016-05-01"), color = "darkblue") +
+  annotate("rect", xmin = ymd("2015-10-01"), xmax = ymd("2016-05-01"),
+           ymin = -Inf, ymax = Inf, alpha = 0.1) +
+  labs(x = "Date", y = "Garfield Chlorophyll") +
+  theme_classic()
+
+?geom_hline
 #garfield time series has 5 breakpoints, first one in 2016 most significant
 #only highly significant breakpoint for rankin is 2016
+
+##Correlation between rchl and area
+#### Load data#####
+
+dat <- read.csv(file = 'Data/Clean/sat_dat_usf.csv')
+
+#Change character column to date
+dat <- dat %>%
+  mutate(
+    year = str_extract(source_file, "^\\d{4}"),
+    month = str_extract(source_file, "(?<=_)\\d{2}(?=_)"),
+    date = ymd(paste(year, month, "01", sep = "-"))
+  )
+
+str(dat)
+
+dat1 <- dat[-c(97:112), ]
+dat_sat <- dat1 %>% mutate(logarea = log(total_area_m2))
+
+dat <- read.csv(file = 'coastal_data_month.csv')
+
+dat <- dat %>% dplyr::select(-c(oflow, omaxstage, omeanstage, ominstage, wflow, wmeanstage, gNN, gNO3, gNO2, gAP, gOP, rNN, rNO3, rNO2, rAP, rOP, gchlb, rchlb))
+
+str(dat)
+
+str(dat_sat)
+dat$date <- ymd(dat$date)
+
+dat_all <- merge(dat_sat, dat, by = 'date')
+
+
+#plot
+ggplot(data = dat_all)+
+  geom_line(aes(x = date, y = rchl), color = 'red')+
+  geom_line(aes(x = date, y = logarea), color = 'blue')

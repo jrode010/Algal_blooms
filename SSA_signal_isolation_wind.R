@@ -25,6 +25,9 @@ library(zoo)
 
   dat_inc <- dat1 %>% mutate(across(everything(), ~(. - mean(., na.rm = F)))) 
   
+  ggplot()+
+    geom_line(data = dat, aes(x = date, ))
+  
 #### Plot frequencies####
   # select dat column
     colnames( dat_inc )

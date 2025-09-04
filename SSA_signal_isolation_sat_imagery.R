@@ -23,14 +23,16 @@ library(zoo)
   str(dat)
 
   dat1 <- dat[-c(97:112), ]
-  dat_int <- dat1 %>% dplyr::select(-c(date, month, year, n_patches, source_file, X)) %>% mutate(logarea = log(total_area_m2)) %>% 
-    mutate(across(everything(), ~ na.approx(., na.rm = FALSE)))
+  dat_int <- dat1 %>% dplyr::select(-c(month, year, n_patches, source_file, X)) %>% mutate(logarea = log(total_area_m2))
   
   str(dat_int)
 
-  dat_inc <- dat_int %>% mutate(logeast = log(easting), lognorth = log(northing)) %>% mutate(across(everything(), ~(. - mean(., na.rm = F)))) 
+  dat_inc <- dat_int %>% mutate(logeast = log(easting), lognorth = log(northing))
   
-#### Plot frequencies####
+ggplot()+
+  geom_line(data = dat_inc, aes(x = date, y = total_area_m2))
+  
+  #### Plot frequencies####
   # select dat column
     colnames( dat_inc )
     var <- 'lognorth'
