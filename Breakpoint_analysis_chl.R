@@ -31,7 +31,7 @@ dat3 <- cbind(dat_date, dat_int)
 str(dat3)
 
 ggplot()+
-  geom_line(data = dat3, aes(x = date, y = gchl))
+  geom_line(data = dat3, aes(x = date, y = rchl))
 
 # --- Helper: manual AIC/BIC for piecewise-constant means (k = 0..K) ---
 # BIC_k = n*log(RSS_k/n) + (k+1)*log n ; AIC_k = n*log(RSS_k/n) + 2*(k+1)
@@ -397,6 +397,9 @@ str(dat)
 
 dat1 <- dat[-c(97:112), ]
 dat_sat <- dat1 %>% mutate(logarea = log(total_area_m2))
+ggplot()+
+  geom_line(data = dat_sat, aes(x = date, y = total_area_m2))+
+  theme_classic()
 
 dat <- read.csv(file = 'coastal_data_month.csv')
 
@@ -408,9 +411,34 @@ str(dat_sat)
 dat$date <- ymd(dat$date)
 
 dat_all <- merge(dat_sat, dat, by = 'date')
+head(dat_all)
+model <- lm(total_area_m2 ~ rchl, data = dat_all)
+summary(model)
+model1 <- lm(total_area_m2 ~ gchl, data = dat_all)
+summary(model1)
+model2 <- lm(rchl ~ gchl, data = dat_all)
+summary(model2)
 
+ggplot()+
+  geom_smooth(data = dat_all, aes(x = rchl, y = total_area_m2), method = 'lm')+
+  geom_point(data = dat_all, aes(x = rchl, y = total_area_m2))+
+  theme_classic()
 
+ggplot()+
+  geom_smooth(data = dat_all, aes(x = gchl, y = total_area_m2), method = 'lm')+
+  geom_point(data = dat_all, aes(x = gchl, y = total_area_m2))+
+  theme_classic()
+
+ggplot()+
+  geom_smooth(data = dat_all, aes(x = gchl, y = rchl), method = 'lm')+
+  geom_point(data = dat_all, aes(x = gchl, y = rchl))+
+  theme_classic()
 #plot
-ggplot(data = dat_all)+
-  geom_line(aes(x = date, y = rchl), color = 'red')+
-  geom_line(aes(x = date, y = logarea), color = 'blue')
+dat <- read.csv('Data/GB_grab_chl_91-06.csv')
+head(dat)
+dat <- dat %>% dplyr::filter(Value > 0)
+
+dat$Collection_Date <- ymd(dat$Collection_Date)
+ggplot(data = dat)+
+  geom_line(aes(x = Collection_Date, y = Value), color = 'red')+
+  theme_classic()
