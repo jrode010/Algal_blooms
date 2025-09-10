@@ -81,9 +81,17 @@ mflow <- mon_fun2(mf, Daily.Date, DBKEY, Data.Value, 'mf') %>% filter(DBKEY != "
 oflow <- mon_fun2(of, Daily.Date, DBKEY, Data.Value, 'of') %>% filter(DBKEY != "") %>% pivot_wider(names_from = DBKEY, values_from = of) %>% rename(oflow = flow, omaxstage = maxstage, ominstage = minstage, omeanstage = meanstage)
 wflow <- mon_fun2(wf, Daily.Date, DBKEY, Data.Value, 'wf')%>% filter(DBKEY != "") %>% pivot_wider(names_from = DBKEY, values_from = wf) %>% rename(wflow = flow, wmeanstage = meanstage)
 
-
-
 flowlist <- list(aflow, mflow, oflow, wflow)
+flow <- reduce(flowlist, full_join, by = "date")
+write.csv(flow, file = 'Data/cumflow_am.csv')
+#cumulative flow test
+str(af)
+aflow <- af %>% filter(DBKEY == 'flow') %>% mutate(date = mdy(Daily.Date)) %>% mutate(date = as.Date(format(date, '%Y-%m-01'))) %>% 
+  group_by(date) %>% summarize(aflow = sum(Data.Value, na.rm = T))
+mflow <- mf %>% filter(DBKEY == 'flow') %>% mutate(date = mdy(Daily.Date)) %>% mutate(date = as.Date(format(date, '%Y-%m-01'))) %>% 
+  group_by(date) %>% summarize(mflow = sum(Data.Value, na.rm = T))
+
+flowlist <- list(aflow, mflow)
 flow <- reduce(flowlist, full_join, by = "date")
 
 #final dataset for flow is flow lol

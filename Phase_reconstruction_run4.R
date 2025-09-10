@@ -11,8 +11,12 @@ library(plotly)
 
 # Load data and select column
 dat <- read.csv("SSA_run4.csv")
-  colnames( dat )
-  var <- 'gTN'
+dat2 <- read.csv('SSA_flowcum.csv')
+dat <- cbind(dat, dat2)
+write.csv(dat, file = 'SSA_run4_wcumflow.csv') 
+
+colnames( dat )
+  var <- 'mflow_cum'
   x <- dat[,var] |> na.omit()
   x <- scale( x )
 

@@ -10,13 +10,16 @@ library(rlang)
 dat <- read.csv("SSA_run4_dates.csv")
 datsat <- read.csv('SSA_sat_dates.csv')
 datwind <- read.csv('SSA_wind_dates.csv')
+datflow <- read.csv('SSA_flowcum.csv')
 colnames( dat )
 
 datsat <- datsat %>% dplyr::select(-date)
 datwind <- datwind %>% dplyr::select(-date)
 
+
 dat <- cbind(dat, datsat)
 dat <- cbind(dat, datwind)
+dat <- cbind(dat, datflow)
 
 names(dat)
 
@@ -168,6 +171,7 @@ plot( x = ccm$LibMeans$LibSize,
   gpHarea <- loopccmlaglead(dat, 'gpH', 'mean_area', 12,3,4,5)
   gsrainfallarea <- loopccmlaglead(dat, 'gsrainfall', 'mean_area', 12,3,4,5)
   acnh4area <- loopccmlaglead(dat, 'acnh4', 'mean_area', 12,3,4,5)
+  aflowcumarea <- loopccmlaglead(dat, 'aflow_cum', 'mean_area', 12,3,4,5)
   
 #Northing. e = 3, t = 2, er = 4
   actpnorthing <- loopccmlaglead(dat, 'actp', 'northing', 12,3,2,4)
@@ -252,7 +256,7 @@ plot( x = ccm$LibMeans$LibSize,
   gpHgchl <- loopccmlaglead(dat, 'gpH', 'gchl', 12,4,3,4)
   gsrainfallgchl <- loopccmlaglead(dat, 'gsrainfall', 'gchl', 12,4,3,4)
   acnh4gchl <- loopccmlaglead(dat, 'acnh4', 'gchl', 12,4,3,4)
- 
+  aflowcumgchl <- loopccmlaglead(dat, 'aflow_cum', 'gchl', 12,4,3,4)
   
   graphlag <- function(x){
   x1 <- x %>% slice(2:n())
