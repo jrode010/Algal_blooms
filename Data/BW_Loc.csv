@@ -1,0 +1,82 @@
+Site_Name,Old_Site_Name,Basin,Latitude,World Heritage Regions,Longitude,Datum,Project,Collection_Type,Region,Expanded Nutrient Collection
+AC01,,Rankin Lake,25.17613,NCFB,-80.79432,NAD83,Chlorophyll & Nutrient,CN,Central Transition,X
+BBK01,,Black Betsy Keys,25.159,NEFB,-80.625,NAD83,Chlorophyll & Nutrient,C,Eastern,
+BBK02,,Black Betsy Keys,25.123,NEFB,-80.59,NAD83,Chlorophyll & Nutrient,C,Eastern,
+BLAS01,,Blackwater Sound,25.17,NEFB,-80.417,NAD83,Chlorophyll & Nutrient,C,Eastern,
+BLUE01,MOWCS,Blue Bank,25.0229,WFB,-80.92718,NAD83,Chlorophyll & Nutrient,C,Western,
+BLUE02,BLB01,Blue Bank,24.9948,WFB,-80.92728,NAD83,Chlorophyll & Nutrient,CN,Western,X
+BNUT01,,Butternut Keys,25.074,NEFB,-80.53,NAD83,Chlorophyll & Nutrient,C,Eastern,
+BUTT01,,Buttonwood Sound,25.11,NEFB,-80.456,NAD83,Chlorophyll & Nutrient,C,Eastern,
+CAL01,CAB-1,Calusa Keys,25.05924,CFB,-80.71133,NAD83,Chlorophyll & Nutrient,CN,Central,X
+CAP01,CKB-1,Captain Key,25.007,NEFB,-80.64706,NAD83,Chlorophyll & Nutrient,C,Eastern,
+CAT01,CAT-1,Catfish Key,25.088,CFB,-80.913,NAD83,Chlorophyll & Nutrient,C,Western,
+CAT02,CTF607,Catfish Key,25.09855,CFB,-80.87157,NAD83,Chlorophyll & Nutrient,CN,Western,X
+CON01,MUR-1,Conchie Channel,25.118267,WFB,-80.93965,NAD83,Chlorophyll & Nutrient,CN,Western,X
+CON02,,Conchie Channel,25.102,WFB,-81.021,NAD83,Chlorophyll & Nutrient,C,Western,X
+COR01,CRB-1,Corrine Key,25.02792,CFB,-80.76847,NAD83,Chlorophyll & Nutrient,CN,Central,
+COTT01,,Cotton Key,24.996,SFB,-80.579,NAD83,Chlorophyll & Nutrient,C,Eastern,
+COTT02,,Cotton Key,24.98,SFB,-80.625,NAD83,Chlorophyll & Nutrient,C,Eastern,
+CROC01,CDB-1,Crocodile Dragover,25.12843,NCFB,-80.67538,NAD83,Chlorophyll & Nutrient,CN,Central,X
+DC01,,Rankin Lake,25.17389,NCFB,-80.81648,NAD83,Chlorophyll & Nutrient,CN,Central Transition,X
+DEER01,,Deer Key,25.185,NEFB,-80.515,NAD83,Chlorophyll & Nutrient,C,Eastern,
+DUCK01,,Duck Key,25.19,NEFB,-80.474,NAD83,Chlorophyll & Nutrient,C,Eastern,
+DUCK02,,Duck Key,25.155,NEFB,-80.484,NAD83,Chlorophyll & Nutrient,C,Eastern,
+EAGLE01,,Eagle Key,25.178,NEFB,-80.573,NAD83,Chlorophyll & Nutrient,C,Eastern,
+END01,EKB-1,End Key,25.1016,NCFB,-80.7192,NAD83,Chlorophyll & Nutrient,C,Central,
+END02,EKB-2,End Key,25.1267,NCFB,-80.71822,NAD83,Chlorophyll & Nutrient,CN,Central,X
+FNB01,,First National Bank,25.058,WFB,-81.019,NAD83,Chlorophyll & Nutrient,C,Western,
+FNB02,,First National Bank,25.056,WFB,-80.98,NAD83,Chlorophyll & Nutrient,C,Western,X
+JIM01,,Jimmie Key,25.04,NEFB,-80.616,NAD83,Chlorophyll & Nutrient,C,Eastern,
+JOE01,,Joe Bay,25.214882,NEFB,-80.53354,NAD83,Chlorophyll & Nutrient,CN,Eastern Transition,X
+JOHN01,JONVAL03,Johnson Key,25.06408,CFB,-80.90102,NAD83,Chlorophyll & Nutrient,CN,Western,X
+JOHN02,,Johnson Key,25.056515,CFB,-80.930839,NAD83,Chlorophyll & Nutrient,C,Western,X
+JOHN03,,Johnson Key,25.039719,CFB,-80.915036,NAD83,Chlorophyll & Nutrient,CN,Western,X
+LBS01,,Little Blackwater Sound,25.212,NEFB,-80.443,NAD83,Chlorophyll & Nutrient,C,Eastern,
+LBUT01,,Little Buttonwood Sound,25.137,NEFB,-80.448,NAD83,Chlorophyll & Nutrient,C,Eastern,
+LIG01,LB-1,Lignumvitae,24.93435,SFB,-80.70993,NAD83,Chlorophyll & Nutrient,C,Southern,
+LIG02,LB-2,Lignumvitae,24.96453,SFB,-80.69438,NAD83,Chlorophyll & Nutrient,CN,Southern,X
+LIG03,LB-3,Lignumvitae,24.96571,SFB,-80.72694,NAD83,Chlorophyll & Nutrient,C,Southern,
+LMAD01,,Little Madeira Bay,25.184285,NEFB,-80.634361,NAD83,Chlorophyll & Nutrient,CN,Eastern Transition,X
+LONG01,,Long Key,24.899,SFB,-80.766,NAD83,Chlorophyll & Nutrient,C,Southern,
+LONG02,,Long Key,24.876,SFB,-80.83,NAD83,Chlorophyll & Nutrient,C,Southern,
+LONS01,,Long Sound,25.23,NEFB,-80.457,NAD83,Chlorophyll & Nutrient,C,Eastern Transition,X
+MAD01,,Madeira Bay,25.151,NCFB,-80.682,NAD83,Chlorophyll & Nutrient,C,Central Transition,X
+MANK01,,Manatee Keys,25.084,NEFB,-80.604,NAD83,Chlorophyll & Nutrient,C,Eastern,
+NEST01,,Nest Keys,25.162,NEFB,-80.533,NAD83,Chlorophyll & Nutrient,C,Eastern,
+NEST02,,Nest Keys,25.127,NEFB,-80.542,NAD83,Chlorophyll & Nutrient,C,Eastern,
+NMB01,,Ninemile Bank,25,WFB,-80.979,NAD83,Chlorophyll & Nutrient,C,Western,
+NMB02,,Ninemile Bank,24.947,WFB,-80.929,NAD83,Chlorophyll & Nutrient,C,Western,
+NMB03,,Ninemile Bank,24.906,WFB,-80.882,NAD83,Chlorophyll & Nutrient,C,Western,
+NWHIP01,,North Whipray,25.124613,NCFB,-80.740633,NAD83,Chlorophyll & Nutrient,C,Central,X
+NWHIP02,,North Whipray,25.124613,NCFB,-80.764974,NAD83,Chlorophyll & Nutrient,CN,Central,X
+PEL01,PLK-1,Pelican Keys,25.06926,CFB,-80.82337,NAD83,Chlorophyll & Nutrient,C,Central,X
+PEL02,PLK-2,Pelican Keys,25.09185,CFB,-80.822,NAD83,Chlorophyll & Nutrient,CN,Central,X
+PEL03,WP260,Pelican Keys,25.06141,CFB,-80.85186,NAD83,Chlorophyll & Nutrient,CN,Central,X
+PORP01,PLB-1,Porpoise Lake,25.01003,CFB,-80.69005,NAD83,Chlorophyll & Nutrient,C,Eastern,
+RAB01,RANB107/RB03,Rabbit Key,25.01989,CFB,-80.88974,NAD83,Chlorophyll & Nutrient,CN,Western,X
+RAB02,RABN116,Rabbit Key,24.97298,CFB,-80.87065,NAD83,Chlorophyll & Nutrient,CN,Western,X
+RAB03,,Rabbit Key,25.001,CFB,-80.857,NAD83,Chlorophyll & Nutrient,C,Western,
+RAB04,,Rabbit Key,24.968,CFB,-80.84,NAD83,Chlorophyll & Nutrient,C,Western,
+RANKB01,RKB01,Rankin Bight,25.14958,NCFB,-80.77919,NAD83,Chlorophyll & Nutrient,C,Central Transition,X
+RANKL01,RK02/RNK02,Rankin Lake,25.12264,NCFB,-80.81396,NAD83,Chlorophyll & Nutrient,CN,Central Transition,X
+RANKL02,RLB-2,Rankin Lake,25.14232,NCFB,-80.81821,NAD83,Chlorophyll & Nutrient,C,Central Transition,X
+RANKL03,GB,Rankin Lake,25.16722,NCFB,-80.80135,NAD83,Chlorophyll & Nutrient,CN,Central Transition,X
+RUS01,RKB-1,Russell Key,25.04887,CFB,-80.66555,NAD83,Chlorophyll & Nutrient,C,Central,
+RUS02,RKB-2,Russell Key,25.0836,CFB,-80.68208,NAD83,Chlorophyll & Nutrient,C,Central,
+SANT01,,North Whipray,25.15354,NCFB,-80.76074,NAD83,Chlorophyll & Nutrient,C,Central Transition,X
+SID01,SDK-1,Sid Key,25.01879,CFB,-80.78642,NAD83,Chlorophyll & Nutrient,C,Central,X
+SID02,SDK,Sid Key,25.0325,CFB,-80.806417,NAD83,Chlorophyll & Nutrient,CN,Central,X
+SNB01,SNB-1,Snake Bight,25.140813,NCFB,-80.893516,NAD83,Chlorophyll & Nutrient,C,Western,X
+SNB02,,Snake Bight,25.135,NCFB,-80.854,NAD83,Chlorophyll & Nutrient,CN,Western,X
+SPY01,SK-1,Spy Key,25.0259,CFB,-80.72056,NAD83,Chlorophyll & Nutrient,CN,Central,X
+SWA01,,Swash Keys,25.109,NEFB,-80.496,NAD83,Chlorophyll & Nutrient,C,Eastern,
+TAV01,,Tavernier Creek,25.019,NEFB,-80.567,NAD83,Chlorophyll & Nutrient,C,Eastern,
+TB01,TB,Terrapin Bay,25.157229,NCFB,-80.724641,NAD83,Chlorophyll & Nutrient / WQ Network,CN,Central Transition,X
+TB02,TB,Terrapin Bay,25.15559,NCFB,-80.71704,NAD83,Chlorophyll & Nutrient,C,Central Transition,X
+TWIN01,TKB-1,Twin Keys,24.95848,CFB,-80.78084,NAD83,Chlorophyll & Nutrient,C,Central,X
+TWIN02,WTKB,Twin Keys,24.98329,CFB,-80.80891,NAD83,Chlorophyll & Nutrient,CN,Central,X
+TWIN03,TKB-3,Twin Keys,25.00332,CFB,-80.75404,NAD83,Chlorophyll & Nutrient,CN,Central,X
+UCB01,,Upper Cross Bank,25.043,NEFB,-80.554,NAD83,Chlorophyll & Nutrient,C,Eastern,
+WHIP01,WB0,Whipray,25.1008,CFB,-80.75969,NAD83,Chlorophyll & Nutrient,C,Central,X
+WHIP02,WRB-1,Whipray,25.07159,CFB,-80.7645,NAD83,Chlorophyll & Nutrient,CN,Central,X
+WHIP03,WRB-2,Whipray,25.04943,CFB,-80.76859,NAD83,Chlorophyll & Nutrient,C,Central,X

@@ -41,7 +41,7 @@ df <- BW_all %>%
     Site_Name  = factor(Site_Name),
     Surface_pH = as.numeric(Surface_pH)
   )
-
+str(BW_all)
 # Identify predictor columns from "N.N_Rep_A" through "Si_Rep_B" (inclusive)
 nm <- names(df)
 start_i <- which(tolower(nm) == tolower("N.N_Rep_A"))
@@ -55,11 +55,11 @@ predictor_cols <- nm[seq(from = min(start_i, end_i), to = max(start_i, end_i))]
 fit_one <- function(pred_name) {
   # Build small data frame; parse character numerics like "ND" -> NA
   dat <- df %>%
-    select(Site_Name, Surface_pH, !!sym(pred_name)) %>%
+    select(Site_Name, Turbidity, !!sym(pred_name)) %>%
     mutate(x_raw = .data[[pred_name]],
            x = if (is.character(x_raw)) parse_number(x_raw) else as.numeric(x_raw)) %>%
     select(-x_raw) %>%
-    filter(is.finite(Surface_pH), is.finite(x))
+    filter(is.finite(Turbidity), is.finite(x))
   
   n_obs   <- nrow(dat)
   n_sites <- dplyr::n_distinct(dat$Site_Name)
@@ -71,9 +71,9 @@ fit_one <- function(pred_name) {
     ))
   }
   
-  # LMM: Surface_pH ~ predictor + (1|Site_Name)
+  # LMM: Turbidity ~ predictor + (1|Site_Name)
   mod <- tryCatch(
-    lmer(Surface_pH ~ x + (1 | Site_Name), data = dat, REML = FALSE),
+    lmer(Turbidity ~ x + (1 | Site_Name), data = dat, REML = FALSE),
     error = function(e) NULL
   )
   if (is.null(mod)) {
@@ -125,21 +125,21 @@ prep_pred <- function(df, pred) {
   df %>%
     transmute(
       Site_Name   = factor(Site_Name),
-      Surface_pH  = as.numeric(Surface_pH),
+      Turbidity  = as.numeric(Turbidity),
       x_raw       = .data[[pred]]
     ) %>%
     mutate(
       x = if (is.character(x_raw)) readr::parse_number(x_raw) else as.numeric(x_raw),
       predictor = pred
     ) %>%
-    filter(is.finite(Surface_pH), is.finite(x)) %>%
+    filter(is.finite(Turbidity), is.finite(x)) %>%
     select(-x_raw)
 }
 
 plot_dat <- bind_rows(map(preds_to_plot, ~ prep_pred(BW_all, .x)))
 
-# 2) Fit one LMM per predictor: Surface_pH ~ x + (1|Site_Name)
-mods <- map(preds_to_plot, ~ lmer(Surface_pH ~ x + (1 | Site_Name),
+# 2) Fit one LMM per predictor: Turbidity ~ x + (1|Site_Name)
+mods <- map(preds_to_plot, ~ lmer(Turbidity ~ x + (1 | Site_Name),
                                   data = filter(plot_dat, predictor == .x),
                                   REML = FALSE))
 names(mods) <- preds_to_plot
@@ -184,15 +184,15 @@ lab_tbl <- results_ph_as_response %>%
   )
 
 # 6) Plot: points, faint site-specific lines, bold fixed-effect line
-p <- ggplot(plot_dat, aes(x = x, y = Surface_pH)) +
+p <- ggplot(plot_dat, aes(x = x, y = Turbidity)) +
   geom_point(alpha = 0.5, size = 1) +
   geom_line(data = pred_lines, aes(y = yhat), linewidth = 1.1) +
   facet_wrap(~ predictor, scales = "free_x", ncol = 2) +
   theme_classic() +
   labs(
-    x = "NH4",
-    y = "Surface pH",
-    title = "Surface pH vs NH4"
+    x = "Total Phosphorus",
+    y = "Turbidity",
+    title = "Turbidity vs Total Phosphorus"
   )
 
 # (optional) add slope/p labels in each facet
@@ -202,3 +202,148 @@ p + geom_text(
   aes(x = -Inf, y = Inf, label = label),
   hjust = -0.05, vjust = 1.1, size = 3
 )
+
+ggsave(filename = 'plots/turbvstp.png', width = 6, height = 6)
+
+#time series graphs
+names(BW_WQ)
+#conche channel
+# --- Prep: compute Chlorophyll mean, filter sites, reshape long ---
+sites_keep <- c("CON02", "SNB02", "RANKL03")
+
+plot_dat <- BW_WQ %>% mutate(
+  # try ISO first, then MM/DD/YYYY if present
+  Collection_Date_chr = as.character(Collection_Date),
+  d_iso = ymd(Collection_Date_chr, quiet = TRUE),
+  d_mdy = mdy(Collection_Date_chr, quiet = TRUE),
+  Collection_Date = coalesce(d_iso, d_mdy) %>% as.Date()
+) %>%
+  filter(!is.na(Collection_Date)) %>%                     # drop bad dates
+  select(-Collection_Date_chr, -d_iso, -d_mdy)
+
+# --- Compute Chlorophyll mean, filter sites, reshape
+sites_keep <- c("CON02", "SNB02", "RANKL03")
+
+BW_WQ_clean <- BW_WQ %>%
+  mutate(
+    Collection_Date_chr = as.character(Collection_Date),
+    d_iso = suppressWarnings(ymd(Collection_Date_chr)),
+    d_mdy = suppressWarnings(mdy(Collection_Date_chr)),
+    d_xls = suppressWarnings(as.Date(as.numeric(Collection_Date_chr), origin = "1899-12-30")),
+    Collection_Date = coalesce(d_iso, d_mdy, d_xls)
+  ) %>%
+  select(-Collection_Date_chr, -d_iso, -d_mdy, -d_xls) %>%
+  filter(!is.na(Collection_Date)) %>%
+  mutate(
+    Surface_pH        = suppressWarnings(as.numeric(Surface_pH)),
+    Chlorophyll_Rep_A = suppressWarnings(as.numeric(Chlorophyll_Rep_A)),
+    Chlorophyll_Rep_B = suppressWarnings(as.numeric(Chlorophyll_Rep_B))
+  ) %>% 
+  mutate(Chlorophyll_Rep_A = if_else(Chlorophyll_Rep_A > 200, Chlorophyll_Rep_A-200, Chlorophyll_Rep_A), Chlorophyll_Rep_B = if_else(Chlorophyll_Rep_B > 200, Chlorophyll_Rep_B-200, Chlorophyll_Rep_B))
+
+# 2) Compute chlorophyll mean, filter sites, reshape
+plot_dat <- BW_WQ_clean %>%
+  filter(Site_Name %in% sites_keep) %>%
+  mutate(Chlorophyll = rowMeans(cbind(Chlorophyll_Rep_A, Chlorophyll_Rep_B), na.rm = TRUE)) %>%
+  select(Site_Name, Collection_Date, Surface_pH, Chlorophyll) %>%
+  pivot_longer(c(Surface_pH, Chlorophyll),
+               names_to = "variable", values_to = "value") %>%
+  mutate(variable = recode(variable,
+                           "Surface_pH" = "Surface pH",
+                           "Chlorophyll" = "Chlorophyll"))
+
+# Quick sanity check (optional)
+stopifnot(inherits(plot_dat$Collection_Date, "Date"))
+
+# 3) Plot
+library(patchwork)   # install.packages("patchwork") if needed
+
+plot_one_site <- function(site_id) {
+  ggplot(filter(plot_dat, Site_Name == site_id),
+         aes(x = Collection_Date, y = value)) +
+    geom_line(na.rm = TRUE) +
+    labs(title = site_id, x = "Year", y = NULL) +
+    scale_x_date(date_breaks = "1 year", date_labels = "%Y", expand = expansion(mult = c(0.01, 0.01))) +
+    facet_wrap(~ variable, ncol = 1, scales = "free_y") +
+    theme_classic() +
+    theme(
+      axis.title = element_text(face = "bold"),
+      axis.text  = element_text(face = "bold"),
+      plot.title = element_text(face = "bold", hjust = 0.5)
+    )
+}
+
+p_con   <- plot_one_site("CON02")
+p_snb   <- plot_one_site("SNB02")
+p_rankl <- plot_one_site("RANKL03")
+p_rankl
+
+ggsave(plot = p_con, filename = 'plots/CON02_chlph.png', width = 8, height = 3)
+ggsave(plot = p_snb, filename = 'plots/SNB02_chlph.png', width = 8, height = 3)
+ggsave(plot = p_rankl, filename = 'plots/RANKL03_chlph.png', width = 8, height = 3)
+
+# stack vertically; use | for side-by-side
+p_con / p_snb / p_rankl
+
+###Map for visualization
+pkgs <- c("readxl","dplyr","sf","maptiles","terra","tidyterra","ggplot2","ggspatial")
+to_install <- setdiff(pkgs, rownames(installed.packages()))
+if (length(to_install)) install.packages(to_install, dependencies = TRUE)
+
+library(readxl)
+library(dplyr)
+library(sf)
+library(maptiles)
+library(terra)
+library(tidyterra)   # for geom_spatraster_rgb
+library(ggplot2)
+library(ggspatial)
+
+sites <- read.csv('Data/BW_Loc.csv')
+sites_sf <- sites %>%
+  filter(Site_Name %in% c("CON02","SNB02","RANKL03")) %>%
+  st_as_sf(coords = c("Longitude","Latitude"), crs = 4326, remove = FALSE)
+
+# ---- 2) Build a padded bounding box for Florida Bay extent ----
+pad <- 0.20  # ~0.2 degrees (~20 km); tweak if you want a wider frame
+bb <- sf::st_bbox(sites_sf)       # named numeric vector with class "bbox"
+bb["xmin"] <- bb["xmin"] - pad
+bb["ymin"] <- bb["ymin"] - pad
+bb["xmax"] <- bb["xmax"] + pad
+bb["ymax"] <- bb["ymax"] + pad
+
+bb_sfc <- sf::st_as_sfc(bb)       # now works; class is intact
+
+# ---- 3) Fetch satellite tiles (Esri World Imagery) ----
+# zoom can be adjusted: 10–13 gives bay-scale context. Try 11 or 12 if you want more detail.
+sat <- maptiles::get_tiles(
+  x = bb_sfc,
+  provider = "Esri.WorldImagery",
+  zoom = 11,
+  crop = TRUE
+)
+# 'sat' is a SpatRaster with RGB bands
+
+# ---- 4) Plot: satellite background + points + labels + north arrow + scale bar ----
+p <- ggplot() +
+  tidyterra::geom_spatraster_rgb(data = sat) +
+  geom_sf(data = sites_sf, color = "black", size = 2) +
+  geom_sf_text(
+    data = sites_sf,
+    aes(label = Site_Name),
+    nudge_y = -0.02,
+    vjust = 0.3,              # pushes text slightly below the anchor
+    fontface = "bold",
+    color = "black"
+  ) +
+  annotation_scale(location = "bl", width_hint = 0.25, text_cex = 0.8) +
+  annotation_north_arrow(location = "tl", which_north = "true",
+                         style = north_arrow_fancy_orienteering) +
+  coord_sf(xlim = c(bb["xmin"], bb["xmax"]),
+           ylim = c(bb["ymin"], bb["ymax"]),
+           expand = FALSE) +
+  theme_void()
+
+print(p)
+
+ggsave(filename = 'plots/map_BW3sites.png', height = 5, width = 5)

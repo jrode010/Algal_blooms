@@ -28,10 +28,20 @@ library(zoo)
   str(dat_int)
 
   dat_inc <- dat_int %>% mutate(logeast = log(easting), lognorth = log(northing))
+  dat_inc <- dat_inc %>% mutate(areakm = total_area_m2/1000000)
   
 ggplot()+
-  geom_line(data = dat_inc, aes(x = date, y = total_area_m2))
-  
+  geom_line(data = dat_inc, aes(x = date, y = areakm), color = 'blue4')+
+  ylab(expression(Area~(km^2)))+
+  ggtitle('Algal Bloom size')+
+  xlab('Year')+
+  scale_x_date(date_breaks = "1 year", date_labels = "%Y")+
+  theme_classic()+
+  theme(axis.title   = element_text(face = "bold"),   # both x and y labels bold
+        axis.text    = element_text(face = "bold"),
+        plot.title = element_text(hjust = 0.5))
+
+ ggsave(filename = 'Algal_bloom_size.png', width = 4.77, height = 5) 
   #### Plot frequencies####
   # select dat column
     colnames( dat_inc )
