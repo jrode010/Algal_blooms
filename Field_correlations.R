@@ -6,7 +6,12 @@ library(readr)        # for parse_number()
 library(lme4)
 library(lmerTest)     # p-values for fixed effects in lmer()
 library(performance) 
-
+library(tidyverse)
+library(broom)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(sf)
+library(rnaturalearthhires)
 
 #Use Baywide data since it is a longer time series. 
 BW_WQ <- read.csv('Data/BW_WQ.csv')
@@ -42,6 +47,7 @@ df <- BW_all %>%
     Surface_pH = as.numeric(Surface_pH)
   )
 str(BW_all)
+write.csv(BW_all, file = 'Data/Baywide/cleaned.csv')
 # Identify predictor columns from "N.N_Rep_A" through "Si_Rep_B" (inclusive)
 nm <- names(df)
 start_i <- which(tolower(nm) == tolower("N.N_Rep_A"))
@@ -205,6 +211,204 @@ p + geom_text(
 
 ggsave(filename = 'plots/turbvstp.png', width = 6, height = 6)
 
+#Add in all other data to perform relationships
+#coastal
+coast <- read.csv('coastal_data_month.csv')
+#current day
+sites <- read.csv('Data/Current_day/site_metadata.csv')
+wqsonde <- read.csv('Data/Current_day/WQ_sonde1.csv')
+wqnut <- read.csv('Data/Current_day/WQ_nut.csv')
+wqchl <- read.csv('Data/Current_day/chl.csv')
+head(wqsonde)
+head(sites)
+head(wqnut)
+head(wqchl)
+str(wqnut$Sampling_event)
+
+for (i in 1:nrow(wqnut)) {
+  if (wqnut$Sampling_event[i] == '45681'){
+    wqnut$Sampling_event[i] <- '1-24'
+  } else if (wqnut$Sampling_event[i] == '45985'){
+    wqnut$Sampling_event[i] <- '11-24'
+  } else if (wqnut$Sampling_event[i] == '45771'){
+    wqnut$Sampling_event[i] <- '4-24'
+  } else if (wqnut$Sampling_event[i] == '45893'){
+    wqnut$Sampling_event[i] <- '8-24'
+  } else if (wqnut$Sampling_event[i] == '45740'){
+    wqnut$Sampling_event[i] <- '4-24'
+  } else if (wqnut$Sampling_event[i] == '45862'){
+    wqnut$Sampling_event[i] <- '8-24'
+  } else if (wqnut$Sampling_event[i] == '45000'){
+    wqnut$Sampling_event[i] <- '9-23'
+  }
+}
+head(wqsonde)
+wqsonde <- wqsonde %>% dplyr::select(Site_code, Sampling_event, Sample_code, Temp, DO, Salinity, pH, NTU, FDOM_RFU, FDOM_QSU)
+head(wqnut)
+wqnut_dis <- wqnut %>% dplyr::filter(is.na(NO2.N_um.L) == F) %>% dplyr::select(Sample_code, Site_code, Sampling_event, N.N_um.L, NO2.N_um.L, NO3.N_um.L, NH3.NH4.N_um.L, SRP_um.L) %>% distinct()
+wqnut_tot <- wqnut %>% dplyr::filter(is.na(TN_um.L) == F) %>% dplyr::select(Sample_code, Site_code, Sampling_event, TN_um.L, TP_um.L, TOC_um.L) %>% distinct()
+
+wqsonde1 <- merge(wqsonde, sites, by = 'Site_code')
+str(wqsonde1)
+str(wqnut_dis)
+wq1 <- merge(wqsonde1, wqnut_dis, by = c('Site_code', 'Sampling_event'))
+wq2 <- merge(wq1, wqnut_tot, by = c('Site_code', 'Sampling_event'))
+wq3 <- merge(wq2, wqchl, by = c('Site_code', 'Sampling_event')) %>% distinct() 
+
+write.csv(wq3, file = 'Data/Current_day/combined.csv')
+
+cor_tot <- read.csv('Correlations/combined.csv')
+cor_tot <- cor_tot %>% distinct()
+
+head(cor_tot)
+
+# Define responses and predictors
+responses <- c("chlorophyll", "pH", "turbidity")
+predictors <- c("TP", "TOC", "TN", "temp", "salinity", "NO2", "NH4")
+
+# Function to find best model for one response
+find_best_model <- function(response, predictors, data) {
+  results <- map_dfr(predictors, function(pred) {
+    formula <- as.formula(paste(response, "~", pred))
+    model <- lm(formula, data = data)
+    glance(model) %>%
+      mutate(predictor = pred, model = list(model))
+  })
+  best <- results %>% arrange(desc(r.squared)) %>% slice(1)
+  return(best)
+}
+
+# Loop through responses and make plots
+for (resp in responses) {
+  best <- find_best_model(resp, predictors, cor_tot)
+  pred <- best$predictor
+  mod <- best$model[[1]]
+  r2 <- round(best$r.squared, 3)
+  pval <- signif(summary(mod)$coefficients[2,4], 3)
+  
+  p <- ggplot(cor_tot, aes_string(x = pred, y = resp)) +
+    geom_point(alpha = 0.6) +
+    geom_smooth(method = "lm", se = TRUE, color = "blue") +
+    labs(
+      title = paste("Best predictor of", resp, ":", pred),
+      subtitle = paste0("R² = ", r2, ", p = ", pval),
+      x = pred, y = resp
+    ) +
+    theme_minimal(base_size = 14)
+  
+  print(p)
+}
+
+# Select only the variables you need
+vars <- c("chlorophyll", "pH", "turbidity",
+          "TP", "TOC", "TN", "temp", "salinity", "NO2", "NH4")
+
+# Scale variables (mean 0, sd 1) and keep as data frame
+scaled_df <- cor_tot %>%
+  select(all_of(vars)) %>%
+  mutate(across(everything(), scale)) %>%
+  as.data.frame()
+
+# Define responses and predictors
+responses <- c("chlorophyll", "pH", "turbidity")
+predictors <- c("TP", "TOC", "TN", "temp", "salinity", "NO2", "NH4")
+
+# Function to find best model for one response
+find_best_model <- function(response, predictors, data) {
+  results <- map_dfr(predictors, function(pred) {
+    if (!pred %in% names(data)) return(NULL)  # skip if missing
+    formula <- as.formula(paste(response, "~", pred))
+    model <- lm(formula, data = data)
+    glance(model) %>%
+      mutate(predictor = pred, model = list(model))
+  })
+  best <- results %>% arrange(desc(r.squared)) %>% slice(1)
+  return(best)
+}
+
+# Loop through responses and make plots
+for (resp in responses) {
+  best <- find_best_model(resp, predictors, scaled_df)
+  pred <- best$predictor
+  mod <- best$model[[1]]
+  r2 <- round(best$r.squared, 3)
+  pval <- signif(summary(mod)$coefficients[2,4], 3)
+  
+  p <- ggplot(scaled_df, aes(x = !!sym(pred), y = !!sym(resp))) +
+    geom_point(alpha = 0.6) +
+    geom_smooth(method = "lm", se = TRUE, color = "blue") +
+    labs(
+      title = paste("Best predictor of", resp, ":", pred),
+      subtitle = paste0("R² = ", r2, ", p = ", pval),
+      x = paste0(pred, " (scaled)"), 
+      y = paste0(resp, " (scaled)")
+    ) +
+    theme_minimal(base_size = 14)
+  
+  print(p)
+}
+
+
+df <- wq3 %>%
+  rename(
+    temp = Temp,
+    turbidity = NTU,
+    salinity = Salinity,
+    NO2 = NO2.N_um.L,
+    NH4 = NH3.NH4.N_um.L,
+    TOC = TOC_um.L,
+    TP = TP_um.L,
+    TN = TN_um.L,
+    chlorophyll = Chl
+  )
+
+# Variables to map
+vars_to_map <- c("temp", "pH", "turbidity", 
+                 "NO2", "NH4", "TOC", "TP", "TN", 
+                 "salinity", "chlorophyll")
+
+# --- Load shapefile (Florida shoreline) ---
+shoreline <- st_read("south_florida_detailed.shp") %>%
+  st_transform(crs = 4326)
+
+
+plot(shoreline)
+
+# --- Compute bounding box of your data & zoom out a little ---
+lon_range <- range(df_long$Longitude, na.rm = TRUE)
+lat_range <- range(df_long$Latitude, na.rm = TRUE)
+
+lon_pad <- diff(lon_range) * 0.15  # more zoom-out padding
+lat_pad <- diff(lat_range) * 0.15
+
+xlim <- c(lon_range[1] - lon_pad, lon_range[2] + lon_pad)
+ylim <- c(lat_range[1] - lat_pad, lat_range[2] + lat_pad)
+
+# --- Save multipage PDF ---
+pdf("current_day_values_map.pdf", width = 10, height = 8)
+
+for (v in vars_to_map) {
+  p <- ggplot() +
+    geom_sf(data = shoreline, fill = "gray85", color = "black") +
+    geom_point(data = df_long %>% filter(variable == v),
+               aes(x = Longitude, y = Latitude, size = value, color = value),
+               alpha = 0.7) +
+    scale_size_continuous(range = c(1, 8)) +
+    scale_color_viridis_c(option = "plasma") +
+    coord_sf(xlim = xlim, ylim = ylim, expand = FALSE) +
+    facet_wrap(~Sampling_event) +
+    labs(
+      title = paste("Mapping of", v, "across Sampling Events"),
+      size = "Value", color = "Value"
+    ) +
+    theme_void(base_size = 12) +  # removes lat/long lines
+    theme(legend.position = "right",
+          strip.text = element_text(face = "bold"))
+  
+  print(p)
+}
+
+dev.off()
 #time series graphs
 names(BW_WQ)
 #conche channel

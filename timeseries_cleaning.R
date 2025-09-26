@@ -68,6 +68,7 @@ head(f)
 #rename columns
 f <- f %>% rename(date = month, mctnm = mean_MC.TN..µM., actnm = mean_AC.TN..µM., mctpm = mean_MC.FIU.TP..µM., actpm = mean_AC.FIU.TP..µM., mcnn = mean_MC.N.N..µM., acnn = mean_AC.N.N..µM., mcno3 = mean_MC.NO3..µM., acno3 = mean_AC.NO3..µM., mcno2 = mean_MC.NO2..µM., acno2 = mean_AC.NO2..µM., mcnh4 = mean_MC.NH4..µM., acnh4 = mean_AC.NH4..µM., mcsrp = mean_MC.SRP..µM., acsrp = mean_AC.SRP..µM., mcdoc = mean_MC.DOC..µM., acdoc = mean_AC.DOC..µM., mcsalm = mean_MC.Sal..ppt., acsalm = mean_AC.Sal..ppt.)
 
+
 cdat <- merge(c3dm, f, by = 'date')
 
 cdat[cdat < 0] <- NA
@@ -717,3 +718,6 @@ dat_int <- dat_int %>% mutate(actn = (if_else(actn > 300, 300, actn)))
 
 dat_inc <- dat_int %>% mutate(across(everything(), ~. - mean(., na.rm = F)))
 str(dat_inc)
+
+#####Isolation of dissolved nutreints for Jenny####
+dat <- read.csv('coastal_data_month.csv')

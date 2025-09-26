@@ -10,11 +10,22 @@ library(purrr)
 
 #Load in data - full time series
 dat <- read.csv('coastal_data_month.csv')
+#Taylor Slough flows and stage
+tsflow <- read.csv('Data/Taylor_bridge_flow.csv')
+tsstage <- read.csv('Data/Taylor_bridge_stage.csv')
+marsh <- read.csv('Data/clean/Marsh_CHP_rain.csv')
+head(marsh)
 
 #set up dataset
 #Time column - monthly
 dat$date <- ymd(dat$date)
 str(dat)
+
+tsflow$date <- mdy(tsflow$Daily.Date)
+tsstage$date <- mdy(tsstage$Daily.Date)
+str(tsflow)
+
+marshstage <- marsh %>% dplyr::filter(DBKEY == 'meanstage') %>% mutate(date = mdy(Daily.Date))
 
 #reduce columns, remove NAs at beginning, fill in NAs
 dat2 <- dat %>% dplyr::select(date, gchl, rchl)
@@ -32,6 +43,11 @@ str(dat3)
 
 ggplot()+
   geom_line(data = dat3, aes(x = date, y = rchl))
+
+ggplot()+
+  geom_line(data = tsflow, aes(x = date, y = Data.Value))
+ggplot()+
+  geom_line(data = tsstage, aes(x = date, y = Data.Value))
 
 # --- Helper: manual AIC/BIC for piecewise-constant means (k = 0..K) ---
 # BIC_k = n*log(RSS_k/n) + (k+1)*log n ; AIC_k = n*log(RSS_k/n) + 2*(k+1)
@@ -244,19 +260,19 @@ breakpoint_analysis_chl <- function(
   
   # ---- Plots ----
   base <- ggplot(monthly, aes(date, chl)) + geom_line(linewidth = 0.7) +
-    theme_classic() + labs(x = NULL, y = "Chlorophyll")
+    theme_classic() + labs(x = NULL, y = "Flow (CFS)")
   
   p_mean <- base +
     { if (nrow(mean_tbl)) geom_rect(data = mean_tbl, aes(xmin = ci_lower, xmax = ci_upper, ymin = -Inf, ymax = Inf),
                                     inherit.aes = FALSE, alpha = 0.12) } +
-    { if (nrow(mean_tbl)) geom_vline(data = mean_tbl, aes(xintercept = as.numeric(date)), linetype = 2) } +
+    { if (nrow(mean_tbl)) geom_vline(data = mean_tbl, aes(xintercept = as.numeric(date)), linetype = 2, color = 'red') } +
     labs(title = paste0("Mean-shift breaks (", if (deseason_stl) "STL-deseasoned" else "raw",
                         ", IC=", ic, ", h=", min_seg_months, ")"))
   
   p_trend <- base +
     { if (nrow(trend_tbl)) geom_rect(data = trend_tbl, aes(xmin = ci_lower, xmax = ci_upper, ymin = -Inf, ymax = Inf),
                                      inherit.aes = FALSE, alpha = 0.12) } +
-    { if (nrow(trend_tbl)) geom_vline(data = trend_tbl, aes(xintercept = as.numeric(date)), linetype = 2) } +
+    { if (nrow(trend_tbl)) geom_vline(data = trend_tbl, aes(xintercept = as.numeric(date)), linetype = 2, color = 'red') } +
     labs(title = paste0("Trend (slope) breaks (raw, IC=", ic, ", h=", min_seg_months, ")"))
   
   # ---- Return ----
@@ -281,9 +297,77 @@ out_bic <- breakpoint_analysis_chl(
   deseason_stl=TRUE, ic="BIC"
 )
 
+#run the breakpoint analysis - tsflow
+
+#monthly
+tsflow$month <- format(as.Date(tsflow$date, format = '%Y-%m-%d'), format = '%Y-%m-01')
+str(tsflow)
+tsflowmonth <- tsflow %>% group_by(month) %>% summarize(mean = mean(Data.Value), max = max(Data.Value), sum = sum(Data.Value)) %>% mutate(month = ymd(month))
+
+
+
+out_bic <- breakpoint_analysis_chl(
+  tsflowmonth, date_col="month", value_col="mean",
+  min_seg_months=12, max_breaks=6,
+  deseason_stl=TRUE, ic="BIC"
+)
+
+out_bic$ic_curves_mean   
+out_bic$results_mean
+out_bic$plot_mean
+
+#6 breakpoints
+
+#monthly max
+out_bic <- breakpoint_analysis_chl(
+  tsflowmonth, date_col="month", value_col="max",
+  min_seg_months=12, max_breaks=8,
+  deseason_stl=TRUE, ic="BIC"
+)
+
+out_bic$ic_curves_mean   
+out_bic$results_mean
+out_bic$plot_mean
+
+#4 breakpoints
+
+#monthly sum
+out_bic <- breakpoint_analysis_chl(
+  tsflowmonth, date_col="month", value_col="sum",
+  min_seg_months=12, max_breaks=8,
+  deseason_stl=TRUE, ic="BIC"
+)
+
+out_bic$ic_curves_mean   
+out_bic$results_mean
+out_bic$plot_mean
+
+
+#run the breakpoint analysis - tsstage
+out_bic <- breakpoint_analysis_chl(
+  tsstage, date_col="date", value_col="Data.Value",
+  min_seg_months=12, max_breaks=6,
+  deseason_stl=TRUE, ic="BIC"
+)
+
 out_bic$ic_curves_mean   
 out_bic$results_mean
 out_bic$test_global_mean
+
+#No breakpoints
+
+#run the breakpoint analysis - marsh stage
+out_bic <- breakpoint_analysis_chl(
+  marshstage, date_col="date", value_col="Data.Value",
+  min_seg_months=12, max_breaks=6,
+  deseason_stl=TRUE, ic="BIC"
+)
+
+out_bic$ic_curves_mean   
+out_bic$results_mean
+out_bic$test_global_mean
+
+#No breakpoints
 
 # --- inputs (match what you used) ---
 h  <- 12                     # min_seg_months

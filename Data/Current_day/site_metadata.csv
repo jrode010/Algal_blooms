@@ -1,0 +1,40 @@
+Site_Name,Site_code,Latitude,Longitude,UTM_Easting,UTM_Northing,Site_type,Algal_subset,Notes
+Marsh 1,TSM1,25.406877,-80.605754,539651.39,2810060.39,Marsh,N,Taylor slough near entrance to park
+Marsh 3,TSM3,25.283386,-80.797905,520346.36,2796342.59,Marsh,N,Marsh across from Paurotis Pond entrance
+Marsh 4,TSM4,25.250483,-80.797746,520367.89,2792699.17,Marsh,N,Marsh just south of Nine Mile Pond
+Snake Bight Trail 1,SBT1,25.184066,-80.873553,512740.66,2785335.4,Mangrove,N,Mangroves along Snake Bight Trail
+Snake Bight Trail 2,SBT2,25.17363,-80.873795,512717.37,2784179.71,POI,N,Creek at end of Snake Bight Trail
+West Lake,ACS1,25.208037,-80.818275,518306.83,2787996.12,Coastal Lakes,Y,West Lake
+Long Lake,ACS2,25.196526,-80.791628,520993.25,2786725.29,Coastal Lakes,N,Long Lake
+Cuthbert Lake,ACS3,25.201427,-80.78667,521491.83,2787268.83,Coastal lakes,N,Cuthbert lake. Sediment collection required at entrance to lake
+The Lungs,ACS4,25.171947,-80.769234,523254.03,2784007.35,Coastal Lakes,Y,The Lungs
+Alligator Creek,ACS5,25.176182,-80.793888,520768.94,2784472.26,POI,N,Entrance to Alligator Creek from Garfield
+Garfield Healthy Mangroves,GBHM,25.177109,-80.794167,520740.72,2784574.87,Mangrove,N,Healthy mangroves near Alligator Creek
+Dead Creek 1,DC1,25.175074,-80.813947,518747.92,2784346.65,POI,N,Southern Dead Creek
+Dead Creek Mangrove 1,DCM1,25.174365,-80.813505,518792.55,2784268.19,Mangrove,N,Dead mangroves off of southern dead creek
+Dead Creek 2,DC2,25.180799,-80.812926,518849.89,2784980.74,POI,N,northern Dead Creek
+Dead Creek Mangrove 2,DCM2,25.181358,-80.811422,519001.33,2785042.77,Mangrove,N,Dead mangroves off of northern dead creek
+Seven Palm Lake,MCS1,25.183946,-80.720982,528113.6,2785345.22,Coastal Lakes,Y,Seven Palm Lake (sediment near entrance?)
+Middle Lake,MCS2,25.180071,-80.732186,526985.58,2784913.85,Coastal Lakes,N,Middle Lake
+Monroe Lake,MCS3,25.174664,-80.738546,526345.93,2784313.79,Coastal Lakes,Y,Monroe Lake
+McCormick Creek,MCS4,25.16706,-80.731255,527082.21,2783473.3,POI,N,Entrance to McCormick Creek from Terrapin
+Terrapin Healthy Mangrove,TBHM,25.166282,-80.731939,527013.52,2783386.99,Mangrove,N,Healthy mangroves near McCormick Creek
+East Terrapin Creek,TBC,25.156611,-80.71696,528524.5,2782319.2,POI,N,Dead creek on eastern side of Terrapin Bay
+East Terrapin Creek Mangrove,TBCM,25.156911,-80.715074,528715.23,2782352.82,Mangrove,N,Dead mangroves off of east Terrapin Creek
+Terrapin Bay,TB1,25.158573,-80.726274,527586.12,2782534.55,Florida Bay,Y,Terrapin Bay by the hydro station
+Southern Terrapin Bay,TB2,25.126647,-80.714868,528743.15,2779001.64,Florida Bay,N,Florida Bay site just south of Terrapin
+Garfield Bight,GB1,25.167619,-80.804658,519685.12,2783522.46,Florida Bay,Y,Garfield Bight by the hydro station
+Southern Garfield Bight,GB2,25.148194,-80.809977,519152.11,2781370.71,Florida  Bay,N,Florida Bay site just south of Garfield
+Rankin Basin,RB,25.125171,-80.807714,519383.82,2778821.64,Florida Bay,Y,Rankin Basin
+Whipray Basin,WB1,25.081421,-80.762105,523990.16,2773984.49,Florida Bay,Y,Whipray Basin
+Southern Whipray Basin,WB2,25.049659,-80.766102,523593.1,2770466.86,Florida Bay ,N,Southern Whipray Basin
+Twin Keys Basin,TKB,24.982971,-80.765824,523633.91,2763082.59,Florida Bay,N,Twin Keys Basin
+Johnson Basin,JB,25.049651,-80.908714,509207.91,2770448.64,Florida Bay,N,Johnson Basin
+Conche Channel,CC,25.115717,-81.025999,497378.96,2777761.33,Florida Bay,N,Western Conche Channel
+P37,P37,25.285956,-80.688673,531343,2796648,Marsh,N,ENP Marsh
+NCL,NCL,25.24424,-80.74482,525699,2792017,Marsh,N,ENP Marsh
+CP,CP,25.22935,-80.70288,529926,2790377,Marsh,N,ENP Marsh
+E146,E146,25.25252,-80.66626,533609,2792951,Marsh,N,ENP Marsh
+OL,OL,25.26529,-80.61331,538937,2794380,Marsh,N,ENP Marsh
+TSH,TSH,25.31073,-80.631,537142,2799406,Marsh,N,ENP Marsh
+R127,R127,25.35281,-80.60655,539589,2804073,Marsh,N,ENP Marsh
