@@ -243,7 +243,27 @@ for (i in 1:nrow(wqnut)) {
   }
 }
 head(wqsonde)
-wqsonde <- wqsonde %>% dplyr::select(Site_code, Sampling_event, Sample_code, Temp, DO, Salinity, pH, NTU, FDOM_RFU, FDOM_QSU)
+wqsonde <- wqsonde %>% dplyr::select(Site_code, Sampling_event, Sample_code, Temp, DO, Salinity, pH, NTU, FDOM_RFU)
+str(wqsonde)
+unique(wqsonde$Sampling_event)
+for (i in 1:nrow(wqsonde)) {
+  if (wqsonde$Sampling_event[i] == '24-Jan'){
+    wqsonde$Sampling_event[i] <- '1-24'
+  } else if (wqsonde$Sampling_event[i] == '24-Nov'){
+    wqsonde$Sampling_event[i] <- '11-24'
+  } else if (wqsonde$Sampling_event[i] == '24-Apr'){
+    wqsonde$Sampling_event[i] <- '4-24'
+  } else if (wqsonde$Sampling_event[i] == '24-Aug'){
+    wqsonde$Sampling_event[i] <- '8-24'
+  } else if (wqsonde$Sampling_event[i] == '24-Mar'){
+    wqsonde$Sampling_event[i] <- '4-24'
+  } else if (wqsonde$Sampling_event[i] == '24-Jul'){
+    wqsonde$Sampling_event[i] <- '8-24'
+  } else if (wqsonde$Sampling_event[i] == '23-Sep'){
+    wqsonde$Sampling_event[i] <- '9-23'
+  } else if (wqsonde$Sampling_event[i] == '11_23'){
+    wqsonde$Sampling_event[i] <- '1123E'
+}}
 head(wqnut)
 wqnut_dis <- wqnut %>% dplyr::filter(is.na(NO2.N_um.L) == F) %>% dplyr::select(Sample_code, Site_code, Sampling_event, N.N_um.L, NO2.N_um.L, NO3.N_um.L, NH3.NH4.N_um.L, SRP_um.L) %>% distinct()
 wqnut_tot <- wqnut %>% dplyr::filter(is.na(TN_um.L) == F) %>% dplyr::select(Sample_code, Site_code, Sampling_event, TN_um.L, TP_um.L, TOC_um.L) %>% distinct()
@@ -280,7 +300,7 @@ find_best_model <- function(response, predictors, data) {
 
 # Loop through responses and make plots
 for (resp in responses) {
-  best <- find_best_model(resp, predictors, cor_tot)
+  best <- find_best_model(resp, predictors, df)
   pred <- best$predictor
   mod <- best$model[[1]]
   r2 <- round(best$r.squared, 3)
@@ -304,7 +324,7 @@ vars <- c("chlorophyll", "pH", "turbidity",
           "TP", "TOC", "TN", "temp", "salinity", "NO2", "NH4")
 
 # Scale variables (mean 0, sd 1) and keep as data frame
-scaled_df <- cor_tot %>%
+scaled_df <- df %>%
   select(all_of(vars)) %>%
   mutate(across(everything(), scale)) %>%
   as.data.frame()
@@ -361,18 +381,39 @@ df <- wq3 %>%
     TN = TN_um.L,
     chlorophyll = Chl
   )
+for (i in (1:nrow(df))){
+  if (df$Sampling_event[i] == '1123E'){
+    df$Sampling_event[i] <-  '11-23'
+  }
+}
+df <- df %>% mutate(Sampling_event = factor(Sampling_event, levels = c('9-23', '11-23', '1-24', '4-24', '8-24', '11-24')))
+head(df)
+df <- df %>% dplyr::rename(Temperature = temp, Turbidity = turbidity, SRP = SRP_um.L)
+df <- df %>% dplyr::rename(Chlorophyll = chlorophyll, Salinity = salinity)
+str(df)
+df$SRP <- as.numeric(df$SRP)
+
+df$Salinity <- ifelse(df$Salinity > 100, 16.1, df$Salinity)
+
+df1 <- df %>% group_by(Site_code, Sampling_event) %>% mutate(Chlorophyll = mean(Chlorophyll)) %>% dplyr::select(-c(Sample_code.y.1, Rep, Sample_code.x, Sample_code.x.1, Water_amount, Collected, Processed)) %>%  distinct()
 
 # Variables to map
-vars_to_map <- c("temp", "pH", "turbidity", 
+vars_to_map <- c("Temperature", "pH", "Turbidity", 
                  "NO2", "NH4", "TOC", "TP", "TN", 
-                 "salinity", "chlorophyll")
+                 "Salinity", "Chlorophyll", 'SRP', 'DO')
+
+# Pivot to long format
+df_long <- df %>%
+  pivot_longer(cols = all_of(vars_to_map),
+               names_to = "variable",
+               values_to = "value")
 
 # --- Load shapefile (Florida shoreline) ---
 shoreline <- st_read("south_florida_detailed.shp") %>%
   st_transform(crs = 4326)
 
 
-plot(shoreline)
+# plot(shoreline)
 
 # --- Compute bounding box of your data & zoom out a little ---
 lon_range <- range(df_long$Longitude, na.rm = TRUE)
@@ -384,24 +425,55 @@ lat_pad <- diff(lat_range) * 0.15
 xlim <- c(lon_range[1] - lon_pad, lon_range[2] + lon_pad)
 ylim <- c(lat_range[1] - lat_pad, lat_range[2] + lat_pad)
 
+
+
 # --- Save multipage PDF ---
-pdf("current_day_values_map.pdf", width = 10, height = 8)
+library(forcats)
+
+pdf("current_day_values_map_final.pdf", width = 10, height = 8)
 
 for (v in vars_to_map) {
+  
+  # 1) Start from the variable subset
+  df_var <- df_long %>%
+    filter(variable == v) %>%
+    # keep only points that will actually plot
+    filter(!is.na(Longitude), !is.na(Latitude), !is.na(value)) %>%
+    # (optional but robust) only count points inside the map window
+    mutate(in_extent = Longitude >= xlim[1] & Longitude <= xlim[2] &
+             Latitude  >= ylim[1]  & Latitude  <= ylim[2]) %>%
+    filter(in_extent)
+  
+  # 2) Find events with >= 5 plottable points
+  valid_events <- df_var %>%
+    count(Sampling_event, name = "n") %>%
+    filter(n >= 5) %>%
+    pull(Sampling_event)
+  
+  # Skip this variable if nothing qualifies
+  if (length(valid_events) == 0) next
+  event_levels <- c('9-23', '11-23', '1-24', '4-24', '8-24', '11-24')
+  # 3) Keep only valid events + drop unused levels so facets disappear
+  df_plot <- df_var %>%
+    filter(Sampling_event %in% valid_events) %>%
+    droplevels() %>%
+    # (optional) lock a custom order; otherwise it uses the present levels
+    mutate(Sampling_event = factor(Sampling_event, levels = event_levels[event_levels %in% Sampling_event]))
+  
   p <- ggplot() +
     geom_sf(data = shoreline, fill = "gray85", color = "black") +
-    geom_point(data = df_long %>% filter(variable == v),
+    geom_point(data = df_plot,
                aes(x = Longitude, y = Latitude, size = value, color = value),
                alpha = 0.7) +
     scale_size_continuous(range = c(1, 8)) +
     scale_color_viridis_c(option = "plasma") +
     coord_sf(xlim = xlim, ylim = ylim, expand = FALSE) +
-    facet_wrap(~Sampling_event) +
+    facet_wrap(~Sampling_event, drop = TRUE) +  # <- drop unused facet levels
     labs(
-      title = paste("Mapping of", v, "across Sampling Events"),
+      title = paste(v, "across Sampling Events"),
       size = "Value", color = "Value"
     ) +
-    theme_void(base_size = 12) +  # removes lat/long lines
+    theme_void(base_size = 12) +
     theme(legend.position = "right",
           strip.text = element_text(face = "bold"))
   
@@ -409,6 +481,133 @@ for (v in vars_to_map) {
 }
 
 dev.off()
+
+#Zoomed in map
+# --- Compute bounding box of your data & zoom in ---
+lon_range <- range(df_long$Longitude, na.rm = TRUE)
+lat_range <- range(df_long$Latitude, na.rm = TRUE)
+
+lon_pad <- diff(lon_range) * 0.3  # more zoom-out padding
+lat_pad <- diff(lat_range) * 0.3
+
+xlim <- c(lon_range[1] + lon_pad*1.3, lon_range[2] - lon_pad*0.66)
+ylim <- c(lat_range[1] + lat_pad*0.8, lat_range[2] - lat_pad*1.4)
+
+
+
+# --- Save multipage PDF ---
+library(forcats)
+
+pdf("current_day_values_zoomed_final.pdf", width = 10, height = 8)
+
+for (v in vars_to_map) {
+  
+  # 1) Start from the variable subset
+  df_var <- df_long %>%
+    filter(variable == v) %>%
+    # keep only points that will actually plot
+    filter(!is.na(Longitude), !is.na(Latitude), !is.na(value)) %>%
+    # (optional but robust) only count points inside the map window
+    mutate(in_extent = Longitude >= xlim[1] & Longitude <= xlim[2] &
+             Latitude  >= ylim[1]  & Latitude  <= ylim[2]) %>%
+    filter(in_extent)
+  
+  # 2) Find events with >= 5 plottable points
+  valid_events <- df_var %>%
+    count(Sampling_event, name = "n") %>%
+    filter(n >= 5) %>%
+    pull(Sampling_event)
+  
+  # Skip this variable if nothing qualifies
+  if (length(valid_events) == 0) next
+  event_levels <- c('9-23', '11-23', '1-24', '4-24', '8-24', '11-24')
+  # 3) Keep only valid events + drop unused levels so facets disappear
+  df_plot <- df_var %>%
+    filter(Sampling_event %in% valid_events) %>%
+    droplevels() %>%
+    # (optional) lock a custom order; otherwise it uses the present levels
+    mutate(Sampling_event = factor(Sampling_event, levels = event_levels[event_levels %in% Sampling_event]))
+  
+  p <- ggplot() +
+    geom_sf(data = shoreline, fill = "gray85", color = "black") +
+    geom_point(data = df_plot,
+               aes(x = Longitude, y = Latitude, size = value, color = value),
+               alpha = 0.7) +
+    scale_size_continuous(range = c(1, 8)) +
+    scale_color_viridis_c(option = "plasma") +
+    coord_sf(xlim = xlim, ylim = ylim, expand = FALSE) +
+    facet_wrap(~Sampling_event, drop = TRUE) +  # <- drop unused facet levels
+    labs(
+      title = paste(v, "across Sampling Events"),
+      size = "Value", color = "Value"
+    ) +
+    theme_void(base_size = 12) +
+    theme(legend.position = "right",
+          strip.text = element_text(face = "bold"))
+  
+  print(p)
+}
+
+dev.off()
+
+#Bar graphs
+unique(df_long$Sampling_event)
+unique(df_long$variable)
+df_long1 <- df_long %>% dplyr::filter(Sampling_event != '11-23')
+pdf("variable_barplots.pdf", width = 10, height = 8)
+
+for (v in vars_to_map) {
+  message("Processing variable: ", v)
+  
+  # Summarize across ALL sites: mean + SE per event
+  df_summary <- df_long1 %>%
+    filter(variable == v) %>%
+    group_by(Sampling_event) %>%
+    summarise(
+      mean_value = mean(value, na.rm = TRUE),
+      n = n(),
+      se = sd(value, na.rm = TRUE) / sqrt(n),   # Standard Error
+      .groups = "drop"
+    ) %>%
+    filter(n > 0) %>%
+    droplevels()
+
+  
+  if (nrow(df_summary) == 0) next
+  
+  # Plot: bar chart with SE error bars (no n labels)
+  p <- ggplot(df_summary, aes(x = Sampling_event, y = mean_value, fill = Sampling_event)) +
+    geom_col(show.legend = TRUE, width = 0.7) +
+    geom_errorbar(
+      aes(ymin = mean_value - se, ymax = mean_value + se),
+      width = 0.2,
+      linewidth = 0.7
+    ) +
+    scale_fill_manual(
+      values = c(
+        "9-23" = "darkblue",
+        "1-24" = "pink",
+        "4-24" = "darkred",
+        "8-24" = "lightblue"
+      )
+    ) +
+    labs(
+      title = paste("Average", v, "across Sampling Events"),
+      x = "Sampling Event",
+      y = v,
+      fill = "Sampling Event"
+    ) +
+    theme_minimal(base_size = 14) +
+    theme(
+      strip.text = element_text(face = "bold"),
+      plot.title = element_text(face = "bold", hjust = 0.5)
+    )
+  
+  print(p)
+}
+
+dev.off()
+unique(df_long$variable)
 #time series graphs
 names(BW_WQ)
 #conche channel

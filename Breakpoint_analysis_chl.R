@@ -31,7 +31,7 @@ marshstage <- marsh %>% dplyr::filter(DBKEY == 'meanstage') %>% mutate(date = md
 dat2 <- dat %>% dplyr::select(date, gchl, rchl)
 head(dat2)
 #chlorophyll data is not viable before 2011. subset
-dat2 <- dat2 %>% dplyr::filter(date > ymd('2011-01-01')) %>% dplyr::filter(date < ymd('2025-01-01'))
+dat2 <- dat2 %>% dplyr::filter(date > ymd('2010-01-01')) %>% dplyr::filter(date < ymd('2025-01-01'))
 
 dat_int <- dat2 %>% dplyr::select(-date) %>% 
   mutate(across(everything(), ~ na.approx(., na.rm = FALSE))) %>% drop_na()
@@ -292,10 +292,14 @@ breakpoint_analysis_chl <- function(
 
 #run the breakpoint analysis - garfield
 out_bic <- breakpoint_analysis_chl(
-  dat3, date_col="date", value_col="gchl",
+  dat3, date_col="date", value_col="rchl",
   min_seg_months=12, max_breaks=6,
   deseason_stl=TRUE, ic="BIC"
 )
+
+out_bic$results_mean
+out_bic$plot_mean
+
 
 #run the breakpoint analysis - tsflow
 
@@ -441,6 +445,8 @@ seg_summary <- purrr::map_dfr(seq_len(length(cuts)-1), function(j){
 
 seg_summary
 
+dat3 %>% filter(date > ymd('2016-06-01')) %>% summarize(meanr = mean(rchl), sdr = sd(rchl), n = length(rchl), se = sd(rchl)/sqrt(n))
+
 ggplot() +
   geom_line(data = dat3, aes(x = date, y = gchl), color = "darkgreen") +
   # horizontal means
@@ -458,6 +464,23 @@ ggplot() +
   annotate("rect", xmin = ymd("2015-10-01"), xmax = ymd("2016-05-01"),
            ymin = -Inf, ymax = Inf, alpha = 0.1) +
   labs(x = "Date", y = "Garfield Chlorophyll") +
+  theme_classic()
+
+ggplot() +
+  geom_line(data = dat3, aes(x = date, y = rchl), color = "darkgreen") +
+  # horizontal means
+  geom_segment(aes(x = ymd("2011-02-01"), xend = ymd("2016-06-01"),
+                   y = 0.93, yend = 0.93)) +
+  geom_segment(aes(x = ymd("2016-07-01"), xend = ymd("2024-12-01"),
+                   y = 6.97, yend = 6.97)) +
+  # CIs as rectangles (was ribbon)
+  annotate("rect", xmin = ymd("2011-02-01"), xmax = ymd("2016-06-01"),
+           ymin = 0.79, ymax = 1.07, alpha = 0.3) +
+  annotate("rect", xmin = ymd("2016-07-01"), xmax = ymd("2024-12-01"),
+           ymin = 6, ymax = 7.94, alpha = 0.3) +
+  # breakpoint and its CI window
+  geom_vline(xintercept = as.Date("2016-06-01"), color = "darkblue") +
+  labs(x = "Date", y = "Rankin Chlorophyll") +
   theme_classic()
 
 ?geom_hline
