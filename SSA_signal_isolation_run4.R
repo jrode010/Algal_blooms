@@ -18,8 +18,10 @@ library(Rssa)
   dat <- dat %>% dplyr::filter(date < ymd('2024-04-01'))
   ccdat <- ccdat %>%  dplyr::filter(date > ymd('2016-01-01'))
   ccdat <- ccdat %>% dplyr::filter(date < ymd('2024-04-01'))
+  ecdat <- ecdat %>%  dplyr::filter(date > ymd('2016-01-01'))
+  ecdat <- ecdat %>% dplyr::filter(date < ymd('2024-04-01'))
   
-  dat <- merge(dat, ccdat, by = 'date', all = T)
+  dat <- merge(dat, ecdat, by = 'date', all = T)
   
   dat <- dat %>% dplyr::select(-c(mcnn, acnn, mcno3, acno3, mcno2, acno2, mcsrp, acsrp))
   
@@ -48,15 +50,15 @@ library(Rssa)
   
 ##CC data
   head(dat_int)
-  ccdat_int <- dat_int %>% dplyr::select(cNH4, cTOC, cDO, cTP, csal, cturb, ctemp, cNO2, cOP, cTN, cpH, cchla)
-ccdat_int <- ccdat_int %>% slice(2:(n()-1))
-ccdat_inc <- ccdat_int %>% mutate(across(everything(), ~. - mean(., na.rm = F)))
+  ecdat_int <- dat_int %>% dplyr::select(eNH4, eTOC, eDO, eTP, esal, eturb, etemp, eNO2, eTN, epH, echla)
+ecdat_int <- ecdat_int %>% slice(2:(n()-1))
+ecdat_inc <- ecdat_int %>% mutate(across(everything(), ~. - mean(., na.rm = F)))
   
 #### Plot frequencies####
   # select dat column
-    colnames( dat_inc )
-    var <- 'rNH4'
-    x <- dat_inc[,var]
+    colnames( ecdat_inc )
+    var <- 'eTP'
+    x <- ecdat_inc[,var]
   # Fourier transform
     spec <- spectrum( x, method = 'pgram', plot = FALSE )
     df <- data.frame( power = spec$spec, period = 1/spec$freq )
@@ -89,7 +91,7 @@ ccdat_inc <- ccdat_int %>% mutate(across(everything(), ~. - mean(., na.rm = F)))
 ##
   # Set window length - window length has to be less than half of the time series and a multiple of the main component
     length( x )  
-    win <- 48
+    win <- 38
   # Decompose
     obj <- ssa( x, L = win, neig = win,
                 kind = 'toeplitz-ssa' )
@@ -158,6 +160,16 @@ ccdat_inc <- ccdat_int %>% mutate(across(everything(), ~. - mean(., na.rm = F)))
     grp <- list(c(1,2), c(3,4), c(5,6,7,8), c(9,10,11,14)) #cpH
     grp <- list(c(1,2,3,4), c(5,6), c(7,8), c(9,10,11,12)) #cchl
     grp <- list(c(1,12), c(2,4), c(3,5,6,7,8,11), c(9,10), c(13,14), c(15,16,17,18)) #gNH4
+    grp <- list(c(1,2,3,4,5,6), c(7,8,9,10), c(11,12)) #eNH4
+    grp <- list(c(1,2), c(3,4), c(5,6,7,8), c(9,10,11,14), c(12,13,15,16), c(17)) #eTOC
+    grp <- list(c(1,2), c(3,4,5,6,7,8,11,12), c(9,10), c(13,14,16,17), c(15,18)) #eDO
+    grp <- list(c(1,2,3,6,7), c(4,5,8), c(9,10,11,12,13), c(14,15,16), c(17,18)) #eTP
+    grp <- list(c(1,2), c(3,4,7,8), c(5,6,9,10), c(11,12)) #esal
+    grp <- list(c(1,2,4,5), c(3,6), c(7,9,10,11), c(8,12), c(13,14)) #eturb
+    grp <- list(c(1,2), c(3,4)) #etemp
+    grp <- list(c(1,2,7), c(3,4,5,6), c(8,9), c(10,11,12)) #eTN
+    grp <- list(c(1,2), c(3,4), c(5,6), c(7,8), c(9,10), c(11,12), c(13,14), c(15,16), c(17,18)) #epH
+    grp <- list(c(1,2,3,8,9), c(4,6,10), c(5,7,13,14), c(11,12)) #echl
     
 
 
@@ -224,11 +236,11 @@ ccdat_inc <- ccdat_int %>% mutate(across(everything(), ~. - mean(., na.rm = F)))
 
  ####   
     signal
-gNH4 <- data.frame(signal) %>% setNames('gNH4')
+eTP <- data.frame(signal) %>% setNames('eTP')
 
-allssa <- cbind(gNH4)
+allssa <- cbind(eNH4, eTOC, eDO, eTP, esal, eturb, etemp, eTN, epH, echl)
 
-write.csv(allssa, file = 'SSA_gnh4.csv')
+write.csv(allssa, file = 'SSA_ec.csv')
 
 ssadates <- cbind(allssa, dat1$date) %>% rename(date = `dat1$date`)
 write.csv(ssadates, file = 'SSA_cc_dates.csv')

@@ -28,8 +28,9 @@ tg <- read.csv(file = 'Data/Clean/TB_grab.csv') #monthly grab sample data in Ter
 gs <- read.csv(file = 'Data/Clean/GB_station.csv') #Daily station data (CHL, DO, Rainfall, salinity, temperature, stage) for Garfield
 ts <- read.csv(file = 'Data/Clean/TB_station.csv') #Daily station data (CHL, DO, Rainfall, salinity, temperature, stage) for Terrapin
 mr <- read.csv(file = 'Data/Clean/Marsh_CHP_rain.csv') #Daily rainfall in the Marsh at CHP
-gg2 <- read.csv(file = 'Data/Clean/GB_grab2.csv')
-cc <- read.csv(file = 'Data/Clean/CC_grab.csv')
+gg2 <- read.csv(file = 'Data/Clean/GB_grab2.csv') #monthly grab sample from Garfield from DBHydro Insights
+cc <- read.csv(file = 'Data/Clean/CC_grab.csv') #monthly grab sample from Conche channel from DBHydro Insights
+ec <- read.csv(file = 'Data/Clean/ec_grab.csv') #monthly grab sample from East Cape from DBHydro Insights
 
 ##Now we have the easy stuff in, let's clean it all up, subsample to monthly, and plot
 ##
@@ -133,6 +134,11 @@ ccdat <- mon_fun2(cc, collectDate, parameter, value, 'mean') %>% filter(paramete
 str(ccdat)
 colnames(ccdat) <- c('date', 'cNH4', 'cTOC', 'cDO', 'cNN', 'cTP', 'csal', 'cturb', 'ctemp', 'cNO2', 'cOP', 'cTN', 'cpH', 'cchla')
 str(ccdat)
+
+ecdat <- mon_fun2(ec, collectDate, parameter, value, 'mean') %>% filter(parameter != "") %>% pivot_wider(names_from = parameter, values_from = mean) #%>% rename(aflow = flow, amaxstage = maxstage, aminstage = minstage)
+str(ecdat)
+colnames(ecdat) <- c('date', 'eNH4', 'eTOC', 'eDO', 'eNN', 'eNO2', 'eTP', 'esal', 'eturb', 'etemp', 'eTN', 'epH', 'echla')
+
 
 
 glist <- list(ggdat, rgdat, tgdat)
