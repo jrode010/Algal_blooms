@@ -29,6 +29,7 @@ gs <- read.csv(file = 'Data/Clean/GB_station.csv') #Daily station data (CHL, DO,
 ts <- read.csv(file = 'Data/Clean/TB_station.csv') #Daily station data (CHL, DO, Rainfall, salinity, temperature, stage) for Terrapin
 mr <- read.csv(file = 'Data/Clean/Marsh_CHP_rain.csv') #Daily rainfall in the Marsh at CHP
 gg2 <- read.csv(file = 'Data/Clean/GB_grab2.csv')
+cc <- read.csv(file = 'Data/Clean/CC_grab.csv')
 
 ##Now we have the easy stuff in, let's clean it all up, subsample to monthly, and plot
 ##
@@ -124,6 +125,15 @@ colnames(tgdat) <- c('date', 'tNH4', 'tTOC', 'trashchl', 'tDO', 'ktn', 'tNN', 't
 str(tgdat)
 
 tgdat <- tgdat %>% dplyr::select(date, tTOC, tDO, ktn, tNN, tNO3, tNO2, tTP, tsal, tturb, ttemp, tNH4, tAP, tOP, tn, tpH, tsecchi, tdepth, tchl, tchlb) %>% mutate(tTN = coalesce(tn, ktn)) %>% dplyr::select(-tn, -ktn)
+
+head(cc)
+str(cc)
+
+ccdat <- mon_fun2(cc, collectDate, parameter, value, 'mean') %>% filter(parameter != "") %>% pivot_wider(names_from = parameter, values_from = mean) #%>% rename(aflow = flow, amaxstage = maxstage, aminstage = minstage)
+str(ccdat)
+colnames(ccdat) <- c('date', 'cNH4', 'cTOC', 'cDO', 'cNN', 'cTP', 'csal', 'cturb', 'ctemp', 'cNO2', 'cOP', 'cTN', 'cpH', 'cchla')
+str(ccdat)
+
 
 glist <- list(ggdat, rgdat, tgdat)
 gdat <- reduce(glist, full_join, by = "date")

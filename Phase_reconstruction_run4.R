@@ -10,13 +10,13 @@ library(zoo)
 library(plotly)
 
 # Load data and select column
-dat <- read.csv("SSA_run4.csv")
-dat2 <- read.csv('SSA_flowcum.csv')
+dat <- read.csv("SSA_run4_wcumflowcc.csv")
+dat2 <- read.csv('SSA_gnh4.csv')
 dat <- cbind(dat, dat2)
-write.csv(dat, file = 'SSA_run4_wcumflow.csv') 
+write.csv(dat, file = 'SSA_run4_wcumflowccgnh4.csv') 
 
 colnames( dat )
-  var <- 'mflow_cum'
+  var <- 'cchl'
   x <- dat[,var] |> na.omit()
   x <- scale( x )
 
@@ -67,20 +67,36 @@ colnames( dat )
     }
   }  # // end i
   # Plotly
-  print.htmlwidget <- function(widget){
+  # print.htmlwidget <- function(widget){
+  #   temp_file <- paste(tempfile('widget'), 'html', sep = '.')
+  #   htmlwidgets::saveWidget(widget, temp_file, selfcontained = FALSE)
+  #   shell(sprintf("start chrome -app=file://%s", temp_file))
+  # }
+  # plot_ly( Mx, x = ~Mx[,1], y = ~Mx[,2], z = ~Mx[,3],
+  #          type = 'scatter3d', mode = 'lines',
+  #          opacity = 0.75, line = list(width = 6, reverscale = FALSE) ) |> 
+  # layout( title = 'Reconstructed attractor',
+  #         scene = list( xaxis = list(title=names(Mx)[1]),
+  #                       yaxis = list(title=names(Mx)[2]),
+  #                       zaxis = list(title=names(Mx)[3])
+  #         ) )
+  #Mac
+  print.htmlwidget <- function(widget) {
     temp_file <- paste(tempfile('widget'), 'html', sep = '.')
     htmlwidgets::saveWidget(widget, temp_file, selfcontained = FALSE)
-    shell(sprintf("start chrome -app=file://%s", temp_file))
+    # Open in Chrome on macOS
+    system(sprintf("open -a 'Google Chrome' %s", temp_file))
   }
-  plot_ly( Mx, x = ~Mx[,1], y = ~Mx[,2], z = ~Mx[,3],
-           type = 'scatter3d', mode = 'lines',
-           opacity = 0.75, line = list(width = 6, reverscale = FALSE) ) |> 
-  layout( title = 'Reconstructed attractor',
-          scene = list( xaxis = list(title=names(Mx)[1]),
-                        yaxis = list(title=names(Mx)[2]),
-                        zaxis = list(title=names(Mx)[3])
-          ) )
   
+  plot_ly(Mx, x = ~Mx[,1], y = ~Mx[,2], z = ~Mx[,3],
+          type = 'scatter3d', mode = 'lines',
+          opacity = 0.75, line = list(width = 6, reverscale = FALSE)) |> 
+    layout(title = 'Reconstructed attractor',
+           scene = list(
+             xaxis = list(title = names(Mx)[1]),
+             yaxis = list(title = names(Mx)[2]),
+             zaxis = list(title = names(Mx)[3])
+           ))
 
 # Test for nonlinear stationarity with space-time separation plots
   par(mfrow=c(1,1))

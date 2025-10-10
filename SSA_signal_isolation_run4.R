@@ -16,6 +16,10 @@ library(Rssa)
   
   dat <- dat %>% dplyr::filter(date > ymd('2016-01-01'))
   dat <- dat %>% dplyr::filter(date < ymd('2024-04-01'))
+  ccdat <- ccdat %>%  dplyr::filter(date > ymd('2016-01-01'))
+  ccdat <- ccdat %>% dplyr::filter(date < ymd('2024-04-01'))
+  
+  dat <- merge(dat, ccdat, by = 'date', all = T)
   
   dat <- dat %>% dplyr::select(-c(mcnn, acnn, mcno3, acno3, mcno2, acno2, mcsrp, acsrp))
   
@@ -38,12 +42,20 @@ library(Rssa)
   
   dat_inc <- dat_inc %>% dplyr::select(-c(mctn, actn, mctp, actp, mcsal, acsal))
   
+  dat_inc <- dat_inc %>% slice(2:(n()-1))
+  
   dat1 <- dat %>% slice(2:(n()-1))
+  
+##CC data
+  head(dat_int)
+  ccdat_int <- dat_int %>% dplyr::select(cNH4, cTOC, cDO, cTP, csal, cturb, ctemp, cNO2, cOP, cTN, cpH, cchla)
+ccdat_int <- ccdat_int %>% slice(2:(n()-1))
+ccdat_inc <- ccdat_int %>% mutate(across(everything(), ~. - mean(., na.rm = F)))
   
 #### Plot frequencies####
   # select dat column
     colnames( dat_inc )
-    var <- 'mflow'
+    var <- 'rNH4'
     x <- dat_inc[,var]
   # Fourier transform
     spec <- spectrum( x, method = 'pgram', plot = FALSE )
@@ -90,11 +102,11 @@ library(Rssa)
     abline( v = axTicks(1), col = rgb(0,0,0,0.1))
     abline( h = axTicks(2), col = rgb(0,0,0,0.1))
       # Eigenvectors
-    obj |> plot( type = 'vectors', numvectors = 16 )
+    obj |> plot( type = 'vectors', numvectors = 24 )
     obj |> plot( type = 'paired', numvectors = 16 )
     # W-correlation matrix
     obj |> plot( type = 'wcor' )
-    wcor(obj,groups = 1:30) |> plot()
+    wcor(obj,groups = 1:25) |> plot()
 
     
 # SSA grouping
@@ -135,6 +147,18 @@ library(Rssa)
     grp <- list(c(1,2), c(3,4)) #marshmeanrain
     grp <- list(c(1,2), c(3,4)) #gsrainfall
     grp <- list(c(1,2), c(3,4), c(5,6,7,10,13,14), c(8,9), c(11,12)) #gsmeanstage
+    grp <- list(c(1,2), c(3,4,5,6,7,8), c(9,10)) #cNH4
+    grp <- list(c(1,2), c(3,4), c(5,6,8,9,10,12,13,14), c(7,11), c(15,17), c(16,18)) #cTOC
+    grp <- list(c(1,2), c(3,4,5,6,11,13), c(7,8)) #cDO
+    grp <- list(c(1,2), c(3,6), c(4,5), c(7,8,9), c(10,11,12,14), c(13,15)) #cTP
+    grp <- list(c(1,2), c(3,4,5,6), c(7,10,11,12,13,14,15), c(8,9)) #csal
+    grp <- list(c(1,2), c(3,4,5,6,7), c(8,9), c(10,11,12,13,14)) #cturb
+    grp <- list(c(1,2), c(3,4)) #ctemp
+    grp <- list(c(1,2,3,4,5,6,9), c(7,8,10,11,12,13,14,15,16)) #cTN
+    grp <- list(c(1,2), c(3,4), c(5,6,7,8), c(9,10,11,14)) #cpH
+    grp <- list(c(1,2,3,4), c(5,6), c(7,8), c(9,10,11,12)) #cchl
+    grp <- list(c(1,12), c(2,4), c(3,5,6,7,8,11), c(9,10), c(13,14), c(15,16,17,18)) #gNH4
+    
 
 
   
@@ -200,12 +224,11 @@ library(Rssa)
 
  ####   
     signal
-mflow<- data.frame(signal) %>% setNames('mflow')
+gNH4 <- data.frame(signal) %>% setNames('gNH4')
 
-allssa <- cbind(mctn, actn, actp, mctp, mcnh4, acnh4, mcdoc, acdoc, mcsal, acsal, aflow, amaxstage, mflow, mmaxstage, gTOC, gTP, gsal, 
-                gpH, gchl, gTN, rTOC, rTP, rsal, rpH, rchl, rTN, marshmeanrain, gsrainfall, gsmeanstage)
+allssa <- cbind(gNH4)
 
-write.csv(allssa, file = 'SSA_run4.csv')
+write.csv(allssa, file = 'SSA_gnh4.csv')
 
 ssadates <- cbind(allssa, dat1$date) %>% rename(date = `dat1$date`)
-write.csv(ssadates, file = 'SSA_run4_dates.csv')
+write.csv(ssadates, file = 'SSA_cc_dates.csv')
