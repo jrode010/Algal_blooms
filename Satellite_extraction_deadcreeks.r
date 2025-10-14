@@ -3,6 +3,8 @@ library(terra)
 library(tidyverse)
 library(raster)
 library(purrr)
+library(lubridate)
+library(zoo)
 
 ##Use QGIS to find points
 #stack satellite images for extraction
@@ -100,3 +102,37 @@ CDOM_nirblue <- map_dfr(
     )
   }
 )
+
+##Let's try a dataset made in GEE 
+sent_dat <- read.csv('Data/sat_deadcreeks/cdom_sentinel.csv')
+str(sent_dat)
+
+sd <- sent_dat %>% mutate(date = mdy(date)) %>% dplyr::filter(total_points >= 35) %>% dplyr::filter(mean_BR <= 2)
+
+ggplot(sd, aes(x = date, y = mean_BR)) + 
+  geom_line()+
+  geom_point()+
+  theme_classic()
+
+ggplot(sd, aes(x = date, y = mean_BRE))+ 
+  geom_line()+
+  geom_point()+
+  theme_classic()
+str(sd)
+sd <- sd %>% mutate(month = ym(format(date, '%Y-%m')))
+str(sd)
+
+sd_mon <- sd %>% group_by(month) %>% summarize(date = month, BR = mean(mean_BR), BRE = mean(mean_BRE)) %>% ungroup() %>% dplyr::select(-month) %>% distinct()
+str(sd_mon)
+
+ggplot(sd_mon, aes(x = date, y = BR)) + 
+  geom_line()+
+  geom_point()+
+  theme_classic()
+
+ggplot(sd_mon, aes(x = date, y = BRE)) + 
+  geom_line()+
+  geom_point()+
+  theme_classic()
+
+write.csv(sd_mon, 'sentinel_cdom.csv')
