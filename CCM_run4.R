@@ -14,6 +14,7 @@ datflow <- read.csv('SSA_flowcum.csv')
 datcc <- read.csv('SSA_cc.csv')
 datgnh4 <- read.csv('SSA_gnh4.csv')
 datec <- read.csv('SSA_ec.csv')
+datdc <- read.csv('SSA_dc_sentinel.csv')
 colnames( dat )
 
 datsat <- datsat %>% dplyr::select(-date)
@@ -26,6 +27,7 @@ dat <- cbind(dat, datflow)
 dat <- cbind(dat, datcc)
 dat <- cbind(dat, datgnh4)
 dat <- cbind(dat, datec)
+dat <- cbind(dat, datdc)
 names(dat)
 
 # Select variables for CCM test
@@ -198,6 +200,8 @@ plot( x = ccm$LibMeans$LibSize,
   eTNarea <- loopccmlaglead(dat, 'eTN', 'mean_area', 12,3,4,5)
   epHarea <- loopccmlaglead(dat, 'epH', 'mean_area', 12,3,4,5)
   echlarea <- loopccmlaglead(dat, 'echl', 'mean_area', 12,3,4,5)
+  dcbrarea <- loopccmlaglead(dat, 'dcbr', 'mean_area', 12,3,4,5)
+  dcbrearea <- loopccmlaglead(dat, 'dcbre', 'mean_area', 12,3,4,5)
   
   
 #Northing. e = 3, t = 2, er = 4
@@ -274,6 +278,8 @@ plot( x = ccm$LibMeans$LibSize,
   eTNrchl <- loopccmlaglead(dat, 'eTN', 'rchl', 12,3,3,2)
   epHrchl <- loopccmlaglead(dat, 'epH', 'rchl', 12,3,3,2)
   echlrchl <- loopccmlaglead(dat, 'echl', 'rchl', 12,3,3,2)
+  dcbrrchl <- loopccmlaglead(dat, 'dcbr', 'rchl', 12,3,3,2)
+  dcbrerchl <- loopccmlaglead(dat, 'dcbre', 'rchl', 12,3,3,2)
  
   #Loops for gchl: e = 4, t = 3, er = 4
   actpgchl <- loopccmlaglead(dat, 'actp', 'gchl', 12,4,3,4)
@@ -326,6 +332,8 @@ plot( x = ccm$LibMeans$LibSize,
   eTNgchl <- loopccmlaglead(dat, 'eTN', 'gchl', 12,4,3,4)
   epHgchl <- loopccmlaglead(dat, 'epH', 'gchl', 12,4,3,4)
   echlgchl <- loopccmlaglead(dat, 'echl', 'gchl', 12,4,3,4)
+  dcbrgchl <- loopccmlaglead(dat, 'dcbr', 'gchl', 12,4,3,4)
+  dcbregchl <- loopccmlaglead(dat, 'dcbre', 'gchl', 12,4,3,4)
   
   graphlag <- function(x){
   x1 <- x %>% slice(2:n())
@@ -506,6 +514,8 @@ rhorchleNH4 <- rho_lagleadfun_parallel(dat, 'eNH4', 'rchl', 3,3,2,100,12)
 rhorchleTP <- rho_lagleadfun_parallel(dat, 'eTP', 'rchl', 3,3,2,100,12)
 rhorchleturb <- rho_lagleadfun_parallel(dat, 'eturb', 'rchl', 3,3,2,100,12)
 rhorchleTN <- rho_lagleadfun_parallel(dat, 'eTN', 'rchl', 3,3,2,100,12)
+rhorchldcbr <- rho_lagleadfun_parallel(dat, 'dcbr', 'rchl', 3,3,2,100,12)
+rhorchldcbre <- rho_lagleadfun_parallel(dat, 'dcbre', 'rchl', 3,3,2,100,12)
 #gchl
 rhogchlaflow <- rho_lagleadfun_parallel(dat, 'aflow', 'gchl', 4,3,4,100,12)
 rhogchlarea <- rho_lagleadfun_parallel(dat, 'mean_area', 'gchl', 4,3,4,100,12)
@@ -551,6 +561,8 @@ rhoareacTN <- rho_lagleadfun_parallel(dat, 'cTN', 'mean_area', 3,4,5,100,12)
 rhoareacchl <- rho_lagleadfun_parallel(dat, 'cchl', 'mean_area', 3,4,5,100,12)
 rhoareaflowcum <- rho_lagleadfun_parallel(dat, 'aflow_cum', 'mean_area', 3,4,5,100,12)
 rhoareaeTOC <- rho_lagleadfun_parallel(dat, 'eTOC', 'mean_area', 3,4,5,100,12)
+rhoareadcbr <- rho_lagleadfun_parallel(dat, 'dcbr', 'mean_area', 3,4,5,100,12)
+rhoareadcbre <- rho_lagleadfun_parallel(dat, 'dcbre', 'mean_area', 3,4,5,100,12)
 
 future::plan(sequential)
 
@@ -689,8 +701,11 @@ geturbrchl <- graphlag(eturbrchl, rhorchleturb)
 geturbrchl
 getnrchl <- graphlag(eTNrchl, rhorchleTN)
 getnrchl
+gdcbrearea <- graphlag(dcbrearea, rhoareadcbre)
+gdcbrearea
+gdcbrerchl <- graphlag(dcbrerchl, rhorchldcbre)
+gdcbrerchl
 
-ggsave(filename = 'plots/acdocarea_lag.png', plot = gacdocarea)
 ggsave(filename = 'plots/gtocarea_lag.png', plot = ggtocarea)
 ggsave(filename = 'plots/mcdocarea_lag.png', plot = gmcdocarea)
 ggsave(filename = 'plots/mmaxstagearea_lag.png', plot = gmmaxstagearea)
@@ -727,3 +742,5 @@ ggsave(filename = 'plots/areaetoc_lab.png', plot = getocarea)
 ggsave(filename = 'plots/rchletp_lag.png', plot = getprchl)
 ggsave(filename = 'plots/rchleturb_lag.png', plot = geturbrchl)
 ggsave(filename = 'plots/rchletn_lag.png', plot = getnrchl)
+ggsave(filename = 'plots/rchldcbre_lag.png', plot = gdcbrerchl)
+ggsave(filename = 'plots/areadcbre_lag.png', plot = gdcbrearea)

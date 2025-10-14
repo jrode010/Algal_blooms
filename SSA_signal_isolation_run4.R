@@ -20,8 +20,11 @@ library(Rssa)
   ccdat <- ccdat %>% dplyr::filter(date < ymd('2024-04-01'))
   ecdat <- ecdat %>%  dplyr::filter(date > ymd('2016-01-01'))
   ecdat <- ecdat %>% dplyr::filter(date < ymd('2024-04-01'))
+  dcdat <- sd_mon %>% dplyr::filter(date < ymd('2024-04-01'))
   
-  dat <- merge(dat, ecdat, by = 'date', all = T)
+  dat <- merge(dat, dcdat, by = 'date', all = T)
+  dat$BR[1] <- dat$BR[2]
+  dat$BRE[1] <- dat$BRE[2]
   
   dat <- dat %>% dplyr::select(-c(mcnn, acnn, mcno3, acno3, mcno2, acno2, mcsrp, acsrp))
   
@@ -53,12 +56,17 @@ library(Rssa)
   ecdat_int <- dat_int %>% dplyr::select(eNH4, eTOC, eDO, eTP, esal, eturb, etemp, eNO2, eTN, epH, echla)
 ecdat_int <- ecdat_int %>% slice(2:(n()-1))
 ecdat_inc <- ecdat_int %>% mutate(across(everything(), ~. - mean(., na.rm = F)))
-  
-#### Plot frequencies####
+
+##Dead creak data
+dcdat_int <- dat_int %>% dplyr::select(BR, BRE)
+dcdat_int <- dcdat_int %>% slice(2:(n()-1))
+dcdat_inc <- dcdat_int %>% mutate(across(everything(), ~. - mean(., na.rm = F)))
+
+#### Plot frequencies######## Plot frequencBREies####
   # select dat column
-    colnames( ecdat_inc )
-    var <- 'eTP'
-    x <- ecdat_inc[,var]
+    colnames( dcdat_inc )
+    var <- 'BRE'
+    x <- dcdat_inc[,var]
   # Fourier transform
     spec <- spectrum( x, method = 'pgram', plot = FALSE )
     df <- data.frame( power = spec$spec, period = 1/spec$freq )
@@ -91,7 +99,7 @@ ecdat_inc <- ecdat_int %>% mutate(across(everything(), ~. - mean(., na.rm = F)))
 ##
   # Set window length - window length has to be less than half of the time series and a multiple of the main component
     length( x )  
-    win <- 38
+    win <- 48
   # Decompose
     obj <- ssa( x, L = win, neig = win,
                 kind = 'toeplitz-ssa' )
@@ -170,7 +178,8 @@ ecdat_inc <- ecdat_int %>% mutate(across(everything(), ~. - mean(., na.rm = F)))
     grp <- list(c(1,2,7), c(3,4,5,6), c(8,9), c(10,11,12)) #eTN
     grp <- list(c(1,2), c(3,4), c(5,6), c(7,8), c(9,10), c(11,12), c(13,14), c(15,16), c(17,18)) #epH
     grp <- list(c(1,2,3,8,9), c(4,6,10), c(5,7,13,14), c(11,12)) #echl
-    
+    grp <- list(c(1,2,15), c(3,4), c(5,6,7,10,11,12), c(8,9)) #dcbr
+    grp <- list(c(1,2), c(3,4), c(5,6), c(7,8,9,10,11,13), c(12,16,21,23), c(14,15,20,24)) #dcbre
 
 
   
@@ -236,11 +245,11 @@ ecdat_inc <- ecdat_int %>% mutate(across(everything(), ~. - mean(., na.rm = F)))
 
  ####   
     signal
-eTP <- data.frame(signal) %>% setNames('eTP')
+dcbre <- data.frame(signal) %>% setNames('dcbre')
 
-allssa <- cbind(eNH4, eTOC, eDO, eTP, esal, eturb, etemp, eTN, epH, echl)
+allssa <- cbind(dcbr, dcbre)
 
-write.csv(allssa, file = 'SSA_ec.csv')
+write.csv(allssa, file = 'SSA_dc_sentinel.csv')
 
 ssadates <- cbind(allssa, dat1$date) %>% rename(date = `dat1$date`)
 write.csv(ssadates, file = 'SSA_cc_dates.csv')

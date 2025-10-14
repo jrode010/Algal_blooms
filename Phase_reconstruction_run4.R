@@ -10,13 +10,13 @@ library(zoo)
 library(plotly)
 
 # Load data and select column
-dat <- read.csv("SSA_run4_wcumflowccgnh4.csv")
-dat2 <- read.csv('SSA_ec.csv')
+dat <- read.csv("SSA_run4_wcumflowccgnh4ec.csv")
+dat2 <- read.csv('SSA_dc_sentinel.csv')
 dat <- cbind(dat, dat2)
-write.csv(dat, file = 'SSA_run4_wcumflowccgnh4ec.csv') 
+write.csv(dat, file = 'SSA_run4_wcumflowccgnh4ecdc.csv') 
 
 colnames( dat )
-  var <- 'echl'
+  var <- 'dcbre'
   x <- dat[,var] |> na.omit()
   x <- scale( x )
 
