@@ -253,3 +253,17 @@ write.csv(allssa, file = 'SSA_dc_sentinel.csv')
 
 ssadates <- cbind(allssa, dat1$date) %>% rename(date = `dat1$date`)
 write.csv(ssadates, file = 'SSA_cc_dates.csv')
+
+##Graphing time series
+str(dat_int)
+dat_int$date <- ymd(dat$date)
+str(dat_int)
+ggplot(dat_int, aes(x = date, y = gchl))+
+  geom_line(color = 'lightgreen')+
+  #geom_line(aes(x = date, y = rchl), color = 'darkgreen', inherit.aes = F)+
+  geom_line(aes(x = date %m-% months(6), y = BRE*15-20), color = 'blue', inherit.aes = F)+
+  scale_y_continuous(
+    name = 'Chlorophyll (ug/L)',
+    sec.axis = sec_axis(~./15, name = 'Red Edge/Blue Ratio'))+
+  xlab('Date')+
+  theme_classic()

@@ -836,6 +836,7 @@ glagdcbrearea <- graphccmlag(dat, 'dcbre', 'mean_area', 10, 3, 4, 5)
 glagrchlarea <- graphccmlag(dat, 'rchl', 'mean_area', 4, 3, 4, 5)
 glagrtnarea <- graphccmlag(dat, 'rTN', 'mean_area', 0, 3, 4, 5)
 glagrtparea <- graphccmlag(dat, 'rTP', 'mean_area', 0, 3, 4, 5)
+glagcchlarea <- graphccmlag(dat, 'cchl', 'mean_area', 1, 3, 4, 5)
 
 #gchl - e = 4, t = 3, er = 4
 laggphgchl <- graphccmlag(dat, 'gpH', 'gchl', 4, 4, 3, 4)
@@ -853,4 +854,28 @@ glagetprchl <- graphccmlag(dat, 'eTP', 'rchl', 2, 3, 3, 2) #nope
 glagrtnrchl <- graphccmlag(dat, 'rTN', 'rchl', 0, 3, 3, 2)
 glagrtprchl <- graphccmlag(dat, 'rTP', 'rchl', 0, 3, 3, 2)
 
+str(dat)
 
+#S-mapping to look at relationships
+#rchl and lag of dcbre
+
+df2 <- dat %>%
+  dplyr::select(date, rchl, dcbre) %>% 
+  mutate(ll = lag(dcbre, 6)) %>%
+  dplyr::select(date, rchl, ll) %>%
+  drop_na()
+
+libsize_str <- paste("6", nrow(df2)-12, "6")
+smap_rchldcbre <- SMap(dataFrame = df2,
+           E = 3, # embedding dimension
+           tau = -3, # embedding delay
+           exclusionRadius = 2,  # Theiler window
+           target = "ll",       
+           lib = '1 60',
+           pred = '61 90',
+           embedded = T,
+           columns = 'll rchl')
+smap_rchldcbre$predictions
+smap_rchldcbre$coefficients
+?SMap
+?CCM

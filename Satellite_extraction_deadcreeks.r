@@ -136,3 +136,21 @@ ggplot(sd_mon, aes(x = date, y = BRE)) +
   theme_classic()
 
 write.csv(sd_mon, 'sentinel_cdom.csv')
+
+head(sd_mon)
+sent_dat2 <- read.csv('Data/sat_deadcreeks/cdom_sentalg.csv')
+str(sent_dat2)
+
+sd2 <- sent_dat %>% mutate(date = mdy(date)) %>% dplyr::filter(total_points >= 35) %>% dplyr::filter(mean_BR <= 4)
+sd2 <- sd2 %>% mutate(month = ym(format(date, '%Y-%m')))
+sd_mon2 <- sd2 %>% group_by(month) %>% summarize(date = month, BR = mean(mean_BR), BRE = mean(mean_BRE)) %>% ungroup() %>% dplyr::select(-month) %>% distinct()
+
+ggplot()+
+  geom_line(data = sd_mon, aes(x = date, y = BRE), color = 'green')+
+  geom_line(data = sd_mon2, aes(x = date, y = BRE), color = 'blue', inherit.aes = F)+
+  theme_classic()
+
+ggplot()+
+  geom_line(data = sd_mon, aes(x = date, y = BR), color = 'green')+
+  geom_line(data = sd_mon2, aes(x = date, y = BR), color = 'blue', inherit.aes = F)+
+  theme_classic()
