@@ -21,8 +21,11 @@ library(Rssa)
   ecdat <- ecdat %>%  dplyr::filter(date > ymd('2016-01-01'))
   ecdat <- ecdat %>% dplyr::filter(date < ymd('2024-04-01'))
   dcdat <- sd_mon %>% dplyr::filter(date < ymd('2024-04-01'))
+  jgdat <- jgdat %>% dplyr::filter(date > ymd('2016-01-01'))
+  jgdat <- jgdat %>% dplyr::filter(date < ymd('2024-04-01'))
   
-  dat <- merge(dat, dcdat, by = 'date', all = T)
+  
+  dat <- merge(dat, jgdat, by = 'date', all = T)
   dat$BR[1] <- dat$BR[2]
   dat$BRE[1] <- dat$BRE[2]
   
@@ -51,11 +54,11 @@ library(Rssa)
   
   dat1 <- dat %>% slice(2:(n()-1))
   
-##CC data
+##John grab data
   head(dat_int)
-  ecdat_int <- dat_int %>% dplyr::select(eNH4, eTOC, eDO, eTP, esal, eturb, etemp, eNO2, eTN, epH, echla)
-ecdat_int <- ecdat_int %>% slice(2:(n()-1))
-ecdat_inc <- ecdat_int %>% mutate(across(everything(), ~. - mean(., na.rm = F)))
+  jgdat_int <- dat_int %>% dplyr::select(jNH4, jTOC, jDO, jTP, jsal, jturb, jNO2, jTN, jpH, jchla)
+jgdat_int <- jgdat_int %>% slice(2:(n()-1))
+jgdat_inc <- jgdat_int %>% mutate(across(everything(), ~. - mean(., na.rm = F)))
 
 ##Dead creak data
 dcdat_int <- dat_int %>% dplyr::select(BR, BRE)
@@ -64,9 +67,9 @@ dcdat_inc <- dcdat_int %>% mutate(across(everything(), ~. - mean(., na.rm = F)))
 
 #### Plot frequencies######## Plot frequencBREies####
   # select dat column
-    colnames( dcdat_inc )
-    var <- 'BRE'
-    x <- dcdat_inc[,var]
+    colnames( jgdat_inc )
+    var <- 'jchla'
+    x <- jgdat_inc[,var]
   # Fourier transform
     spec <- spectrum( x, method = 'pgram', plot = FALSE )
     df <- data.frame( power = spec$spec, period = 1/spec$freq )
@@ -180,6 +183,15 @@ dcdat_inc <- dcdat_int %>% mutate(across(everything(), ~. - mean(., na.rm = F)))
     grp <- list(c(1,2,3,8,9), c(4,6,10), c(5,7,13,14), c(11,12)) #echl
     grp <- list(c(1,2,15), c(3,4), c(5,6,7,10,11,12), c(8,9)) #dcbr
     grp <- list(c(1,2), c(3,4), c(5,6), c(7,8,9,10,11,13), c(12,16,21,23), c(14,15,20,24)) #dcbre
+    grp <- list(c(1,2), c(3,4,5,6,13,14), c(7,8,9,10,11,12), c(15,16,17,18)) #jNH4
+    grp <- list(c(1,2,3,4,5), c(6,7,8,9,10), c(11,12)) #jTOC
+    grp <- list(c(1,2), c(3,4), c(5,6)) #jDO
+    grp <- list(c(1,4), c(2,3), c(5,6), c(7,8), c(9,10,11,12,13,14,15,16), c(17,18,19,20)) #jTP
+    grp <- list(c(1,2), c(3,6), c(4,5,7,8,13,14), c(9,10,11,12), c(15,16,17)) #jsal
+    grp <- list(c(1,2), c(3,4), c(5,6), c(7,8,9,10,11,12)) #jturb
+    grp <- list(c(1,2), c(3,4,7,9), c(5,6,8,10,11), c(12,13,14), c(15,16)) #jTN
+    grp <- list(c(1,2,3,4), c(5,6,7)) #jpH
+    grp <- list(c(1,2), c(3,5), c(4,6), c(7,8), c(9,10,11,12,13,14,15,16)) #jchl
 
 
   
@@ -245,11 +257,11 @@ dcdat_inc <- dcdat_int %>% mutate(across(everything(), ~. - mean(., na.rm = F)))
 
  ####   
     signal
-dcbre <- data.frame(signal) %>% setNames('dcbre')
+jchl <- data.frame(signal) %>% setNames('jchl')
 
-allssa <- cbind(dcbr, dcbre)
+allssa <- cbind(jNH4, jTOC, jDO, jTP, jsal, jturb, jTN, jpH, jchl)
 
-write.csv(allssa, file = 'SSA_dc_sentinel.csv')
+write.csv(allssa, file = 'SSA_jg.csv')
 
 ssadates <- cbind(allssa, dat1$date) %>% rename(date = `dat1$date`)
 write.csv(ssadates, file = 'SSA_cc_dates.csv')

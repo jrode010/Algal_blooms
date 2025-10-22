@@ -31,6 +31,7 @@ mr <- read.csv(file = 'Data/Clean/Marsh_CHP_rain.csv') #Daily rainfall in the Ma
 gg2 <- read.csv(file = 'Data/Clean/GB_grab2.csv') #monthly grab sample from Garfield from DBHydro Insights
 cc <- read.csv(file = 'Data/Clean/CC_grab.csv') #monthly grab sample from Conche channel from DBHydro Insights
 ec <- read.csv(file = 'Data/Clean/ec_grab.csv') #monthly grab sample from East Cape from DBHydro Insights
+jg <- read.csv(file = 'Data/John_dat.csv') #monthly grab sample from Johnson Basin from DBHydro Insights
 
 ##Now we have the easy stuff in, let's clean it all up, subsample to monthly, and plot
 ##
@@ -139,7 +140,9 @@ ecdat <- mon_fun2(ec, collectDate, parameter, value, 'mean') %>% filter(paramete
 str(ecdat)
 colnames(ecdat) <- c('date', 'eNH4', 'eTOC', 'eDO', 'eNN', 'eNO2', 'eTP', 'esal', 'eturb', 'etemp', 'eTN', 'epH', 'echla')
 
-
+jgdat <- mon_fun2(jg, collectDate, parameter, value, 'mean') %>% filter(parameter != "") %>% pivot_wider(names_from = parameter, values_from = mean) #%>% rename(aflow = flow, amaxstage = maxstage, aminstage = minstage)
+str(jgdat)
+colnames(jgdat) <- c('date', 'jNH4', 'jTOC', 'jDO', 'jNN', 'jNO2', 'jTP', 'jsal', 'jturb', 'jSOP', 'jpH', 'jTN', 'jchla')
 
 glist <- list(ggdat, rgdat, tgdat)
 gdat <- reduce(glist, full_join, by = "date")
