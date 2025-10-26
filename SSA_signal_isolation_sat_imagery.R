@@ -31,7 +31,7 @@ library(zoo)
   dat_inc <- dat_inc %>% mutate(areakm = total_area_m2/1000000)
   
 ggplot()+
-  geom_line(data = dat_inc, aes(x = date, y = areakm), color = 'blue4')+
+  geom_line(data = dat_inc, aes(x = date, y = areakm), color = 'blue4', size = 1.5)+
   ylab(expression(Area~(km^2)))+
   ggtitle('Algal Bloom size')+
   xlab('Year')+
