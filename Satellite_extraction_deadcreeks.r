@@ -135,6 +135,19 @@ ggplot(sd_mon, aes(x = date, y = BRE)) +
   geom_point()+
   theme_classic()
 
+ggplot()+
+  geom_line(data = sd_mon, aes(x = date, y = BRE), size = 1.5, color = 'brown4')+
+  scale_y_continuous(breaks = seq(1,3.5,0.5), limits = c(1,3.5))+
+  scale_x_date(breaks = seq(as.Date('2016-01-01'), as.Date('2024-06-01'), by = '1 year'), date_labels = '%Y')+
+  theme_classic()+
+  labs(title = 'Creek CDOM', x = 'Year', y = 'Blue/Red-Edge Ratio')+
+  theme(axis.text = element_text(size = 10, color = 'black', face = 'bold'),
+        axis.title = element_text(size = 16, face = 'bold'),
+        plot.title = element_text(size = 16, face = 'bold', hjust = 0.5))
+  
+ggsave(filename = 'Creek_CDOM_timeseries.png',
+       units = 'in', width = 8, height = 4,
+       dpi = 300)
 write.csv(sd_mon, 'sentinel_cdom.csv')
 
 head(sd_mon)
