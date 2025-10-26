@@ -740,3 +740,20 @@ str(dat_inc)
 
 #####Isolation of dissolved nutreints for Jenny####
 dat <- read.csv('coastal_data_month.csv')
+ggdat <- ggdat %>% mutate(gNH4 = if_else(gNH4 < 0, 0, gNH4))
+ggplot(ggdat)+
+  geom_line(aes(x = date, y = gNH4))+
+  theme_classic()
+ggdat1 <- ggdat %>% dplyr::filter(date >= ymd('2016-02-01'))
+ggplot(ggdat1)+
+  geom_line(aes(x = date, y = gNH4))+
+  theme_classic()
+
+jgdat1 <- jgdat %>% dplyr::filter(date >= ymd('2016-02-01'))
+ggplot(jgdat1)+
+  geom_line(aes(x = date, y = jchla))+
+  theme_classic()
+
+ggplot(ggdat1)+
+  geom_line(aes(x = date, y = gTP))+
+  theme_classic()
