@@ -16,6 +16,7 @@ datgnh4 <- read.csv('SSA_gnh4.csv')
 datec <- read.csv('SSA_ec.csv')
 datdc <- read.csv('SSA_dc_sentinel.csv')
 datjg <- read.csv('SSA_jg.csv')
+datchpstage <- read.csv('SSA_chpstage.csv')
 colnames( dat )
 
 datsat <- datsat %>% dplyr::select(-date)
@@ -30,11 +31,12 @@ dat <- cbind(dat, datgnh4)
 dat <- cbind(dat, datec)
 dat <- cbind(dat, datdc)
 dat <- cbind(dat, datjg)
+dat <- cbind(dat, datchpstage)
 names(dat)
 
 # Select variables for CCM test
-y <- "mean_area"  # effect
-x <- "rchl"  # cause
+y <- "rchl"  # effect
+x <- "chp_stage"  # cause
 df1 <- dat[,c("date",x,y)] |> na.omit()
 df1$date <- df1$date |> ymd() # format dates
 df1[,c(2,3)] <- apply( df1[,c(2,3)], 2, scale )  # scale signals to mean=0, sd=1
@@ -43,8 +45,8 @@ dim( df1 )
 # Run CCM and plot results
 ccm <- CCM( dataFrame = df1,
             E = 3,   # embedding dimension
-            tau = -4,   # embedding delay
-            exclusionRadius = 5,   # Theiler window
+            tau = -3,   # embedding delay
+            exclusionRadius = 2,   # Theiler window
             target = x,   # prediction target (cause)
             columns = y,   # library (effect) 
             libSizes = "6 84 6",  # string for sequence 'from, to, by'
@@ -65,7 +67,7 @@ ccm$CCM1_PredictStat |> tail()
 #png("E:/FIU/PostDoc/FB_sediment_algal_blooms/Project/Data/Figures_EDM/area_gsmeanstage.png", width = 800, height = 600, res = 100)
 plot( x = ccm$LibMeans$LibSize,
       y = ccm$LibMeans[,2],
-      main = paste( y, 'xmap', x),
+      main = 'Rankin Chlorophyll xmap Marsh Stage',
       ylab = "Prediction skill", xlab = "Library size",
       ylim = range( 0, range(ccm$LibMeans[,2]), 1 ),
       type = 'l', col = 1, lwd = 1 )
