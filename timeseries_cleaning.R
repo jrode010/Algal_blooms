@@ -32,6 +32,7 @@ gg2 <- read.csv(file = 'Data/Clean/GB_grab2.csv') #monthly grab sample from Garf
 cc <- read.csv(file = 'Data/Clean/CC_grab.csv') #monthly grab sample from Conche channel from DBHydro Insights
 ec <- read.csv(file = 'Data/Clean/ec_grab.csv') #monthly grab sample from East Cape from DBHydro Insights
 jg <- read.csv(file = 'Data/John_dat.csv') #monthly grab sample from Johnson Basin from DBHydro Insights
+chps <- read.csv(file = 'Data/Clean/CHP_stage.csv') #daily marsh stage at CHP
 
 ##Now we have the easy stuff in, let's clean it all up, subsample to monthly, and plot
 ##
@@ -53,6 +54,7 @@ mctp = mon_fun1(x = c3d, y = Date, w = MC.FIU.TP..µM., z = 'mctp') %>% mutate(m
 actp = mon_fun1(x = c3d, y = Date, w = AC.FIU.TP..µM., z = 'actp') %>% mutate(actp = if_else(actp < 0, NA, actp))
 mcsal = mon_fun1(x = c3d, y = Date, w = MC.Sal..ppt., z = 'mcsal') %>% mutate(mcsal = if_else(mcsal < 0, NA, mcsal))
 acsal = mon_fun1(x = c3d, y = Date, w = AC.Sal..ppt., z = 'acsal') %>% mutate(acsal = if_else(acsal < 0, NA, acsal))
+
 
 c3dlist <- list(mctn, actn, mctp, actp, mcsal, acsal)
 c3dm <- reduce(c3dlist, full_join, by = "date")
@@ -240,6 +242,10 @@ p <- plot_ly(data = longdata, type = 'scatter', mode = 'lines') %>%
 
 
 saveWidget(p, "docs/interactive_plot.html", selfcontained = TRUE)
+
+#marsh stage
+head(chps)
+chpsd = mon_fun1(x = chps, y = TIMESTAMP, w = VALUE, z = 'chp_stage')
 
 ###Time series of chlorophyll for seatrout presentation####
 

@@ -4,7 +4,7 @@
 #
 
 library(Rssa)
-
+library(zoo)
 
 
 #### Load data#####
@@ -23,9 +23,10 @@ library(Rssa)
   dcdat <- sd_mon %>% dplyr::filter(date < ymd('2024-04-01'))
   jgdat <- jgdat %>% dplyr::filter(date > ymd('2016-01-01'))
   jgdat <- jgdat %>% dplyr::filter(date < ymd('2024-04-01'))
+  chpsd <- chpsd %>% dplyr::filter(date < ymd('2024-04-01'))
+  chpsd <- chpsd %>% dplyr::filter(date > ymd('2016-01-01'))
   
-  
-  dat <- merge(dat, jgdat, by = 'date', all = T)
+  dat <- merge(dat, chpsd, by = 'date', all = T)
   dat$BR[1] <- dat$BR[2]
   dat$BRE[1] <- dat$BRE[2]
   
@@ -65,11 +66,16 @@ dcdat_int <- dat_int %>% dplyr::select(BR, BRE)
 dcdat_int <- dcdat_int %>% slice(2:(n()-1))
 dcdat_inc <- dcdat_int %>% mutate(across(everything(), ~. - mean(., na.rm = F)))
 
+#marsh stage
+ms_int <- dat_int %>% dplyr::select(chp_stage)
+ms_int <- ms_int %>% slice(2:(n()-1))
+ms_inc <- ms_int %>% mutate(across(everything(), ~. - mean(., na.rm = F)))
+
 #### Plot frequencies######## Plot frequencBREies####
   # select dat column
-    colnames( jgdat_inc )
-    var <- 'jchla'
-    x <- jgdat_inc[,var]
+    colnames( ms_inc )
+    var <- 'chp_stage'
+    x <- ms_inc[,var]
   # Fourier transform
     spec <- spectrum( x, method = 'pgram', plot = FALSE )
     df <- data.frame( power = spec$spec, period = 1/spec$freq )
@@ -192,6 +198,7 @@ dcdat_inc <- dcdat_int %>% mutate(across(everything(), ~. - mean(., na.rm = F)))
     grp <- list(c(1,2), c(3,4,7,9), c(5,6,8,10,11), c(12,13,14), c(15,16)) #jTN
     grp <- list(c(1,2,3,4), c(5,6,7)) #jpH
     grp <- list(c(1,2), c(3,5), c(4,6), c(7,8), c(9,10,11,12,13,14,15,16)) #jchl
+    grp <- list(c(1,2), c(3,4), c(5,6), c(7,8), c(9,10)) #marsh stage
 
 
   
@@ -257,11 +264,11 @@ dcdat_inc <- dcdat_int %>% mutate(across(everything(), ~. - mean(., na.rm = F)))
 
  ####   
     signal
-jchl <- data.frame(signal) %>% setNames('jchl')
+chp_stage <- data.frame(signal) %>% setNames('chp_stage')
 
 allssa <- cbind(jNH4, jTOC, jDO, jTP, jsal, jturb, jTN, jpH, jchl)
 
-write.csv(allssa, file = 'SSA_jg.csv')
+write.csv(chp_stage, file = 'SSA_chpstage.csv')
 
 ssadates <- cbind(allssa, dat1$date) %>% rename(date = `dat1$date`)
 write.csv(ssadates, file = 'SSA_cc_dates.csv')
