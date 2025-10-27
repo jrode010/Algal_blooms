@@ -928,6 +928,16 @@ gdcbrerchl <- graphlag(dcbrerchl, rhorchldcbre)
 gdcbrerchl
 gcDOjchl <- graphlag(cDOjchl, rhojchlcDO)
 gcDOjchl
+getnjchl <- graphlag(eTNjchl, rhojchleTN)
+getnjchl
+getocjchl <- graphlag(eTOCjchl, rhojchleTOC)
+getocjchl
+gjturbjchl <- graphlag(jturbjchl, rhojchljturb)
+gjturbjchl
+gactpgph <- graphlag(actpgpH, rhogpHactp)
+gactpgph
+ggnh4gph <- graphlag(gnh4gpH, rhogpHgnh4)
+ggnh4gph
 
 ggsave(filename = 'plots/gtocarea_lag.png', plot = ggtocarea)
 ggsave(filename = 'plots/mcdocarea_lag.png', plot = gmcdocarea)
@@ -967,6 +977,10 @@ ggsave(filename = 'plots/rchleturb_lag.png', plot = geturbrchl)
 ggsave(filename = 'plots/rchletn_lag.png', plot = getnrchl)
 ggsave(filename = 'plots/rchldcbre_lag.png', plot = gdcbrerchl)
 ggsave(filename = 'plots/areadcbre_lag.png', plot = gdcbrearea)
+ggsave(filename = 'plots/jchletn_lag.png', plot = getnjchl)
+ggsave(filename = 'plots/jchljturb_lag.png', plot = gjturbjchl)
+ggsave(filename = 'plots/gphactp_lag.png', plot = gactpgph)
+ggsave(filename = 'plots/gphgn4_lag.png', plot = ggnh4gph)
 
 ##CCM graphs at the max lag for significant variables
 #function to graph
