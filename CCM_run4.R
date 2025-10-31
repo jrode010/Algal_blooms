@@ -36,7 +36,7 @@ names(dat)
 
 # Select variables for CCM test
 y <- "rchl"  # effect
-x <- "chp_stage"  # cause
+x <- "cTP"  # cause
 df1 <- dat[,c("date",x,y)] |> na.omit()
 df1$date <- df1$date |> ymd() # format dates
 df1[,c(2,3)] <- apply( df1[,c(2,3)], 2, scale )  # scale signals to mean=0, sd=1
@@ -67,7 +67,7 @@ ccm$CCM1_PredictStat |> tail()
 #png("E:/FIU/PostDoc/FB_sediment_algal_blooms/Project/Data/Figures_EDM/area_gsmeanstage.png", width = 800, height = 600, res = 100)
 plot( x = ccm$LibMeans$LibSize,
       y = ccm$LibMeans[,2],
-      main = 'Rankin Chlorophyll xmap Marsh Stage',
+      main = 'Rankin Chlorophyll xmap Gulf Total Phosphorus',
       ylab = "Prediction skill", xlab = "Library size",
       ylim = range( 0, range(ccm$LibMeans[,2]), 1 ),
       type = 'l', col = 1, lwd = 1 )
@@ -928,6 +928,16 @@ gdcbrerchl <- graphlag(dcbrerchl, rhorchldcbre)
 gdcbrerchl
 gcDOjchl <- graphlag(cDOjchl, rhojchlcDO)
 gcDOjchl
+getnjchl <- graphlag(eTNjchl, rhojchleTN)
+getnjchl
+getocjchl <- graphlag(eTOCjchl, rhojchleTOC)
+getocjchl
+gjturbjchl <- graphlag(jturbjchl, rhojchljturb)
+gjturbjchl
+gactpgph <- graphlag(actpgpH, rhogpHactp)
+gactpgph
+ggnh4gph <- graphlag(gnh4gpH, rhogpHgnh4)
+ggnh4gph
 
 ggsave(filename = 'plots/gtocarea_lag.png', plot = ggtocarea)
 ggsave(filename = 'plots/mcdocarea_lag.png', plot = gmcdocarea)
@@ -967,6 +977,10 @@ ggsave(filename = 'plots/rchleturb_lag.png', plot = geturbrchl)
 ggsave(filename = 'plots/rchletn_lag.png', plot = getnrchl)
 ggsave(filename = 'plots/rchldcbre_lag.png', plot = gdcbrerchl)
 ggsave(filename = 'plots/areadcbre_lag.png', plot = gdcbrearea)
+ggsave(filename = 'plots/jchletn_lag.png', plot = getnjchl)
+ggsave(filename = 'plots/jchljturb_lag.png', plot = gjturbjchl)
+ggsave(filename = 'plots/gphactp_lag.png', plot = gactpgph)
+ggsave(filename = 'plots/gphgn4_lag.png', plot = ggnh4gph)
 
 ##CCM graphs at the max lag for significant variables
 #function to graph
