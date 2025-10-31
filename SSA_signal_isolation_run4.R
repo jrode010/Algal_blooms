@@ -5,17 +5,17 @@
 
 library(Rssa)
 library(zoo)
-
+library(tidyverse)
 
 #### Load data#####
-  dat <- read.csv(file = 'coastal_data_month.csv')
+  dat2 <- read.csv(file = 'coastal_data_month.csv')
   
   dat <- dat %>% dplyr::select(-c(oflow, omaxstage, omeanstage, ominstage, wflow, wmeanstage, gNN, gNO3, gNO2, gAP, gOP, rNN, rNO3, rNO2, rAP, rOP, gchlb, rchlb))
 
   str(dat)
   
-  dat <- dat %>% dplyr::filter(date > ymd('2016-01-01'))
-  dat <- dat %>% dplyr::filter(date < ymd('2024-04-01'))
+  dat2 <- dat2 %>% dplyr::filter(date > ymd('2016-01-01'))
+  dat2 <- dat2 %>% dplyr::filter(date < ymd('2024-04-01'))
   ccdat <- ccdat %>%  dplyr::filter(date > ymd('2016-01-01'))
   ccdat <- ccdat %>% dplyr::filter(date < ymd('2024-04-01'))
   ecdat <- ecdat %>%  dplyr::filter(date > ymd('2016-01-01'))
@@ -32,8 +32,16 @@ library(zoo)
   
   dat <- dat %>% dplyr::select(-c(mcnn, acnn, mcno3, acno3, mcno2, acno2, mcsrp, acsrp))
   
-  dat_int <- dat %>% dplyr::select(-date) %>% 
+  dat_int <- dat2 %>% dplyr::select(-date) %>% 
     mutate(across(everything(), ~ na.approx(., na.rm = FALSE)))
+  dat_int <- dat_int %>% slice(2:(n()-1))
+  dat_int$date <- dat$date
+  
+  dat_int <- dat_int %>% dplyr::filter(date < ymd('2020-01-01'))
+  
+  ggplot(dat_int)+
+    geom_line(aes(x = ymd(date), y = gTOC))+
+    theme_classic()
   
   str(dat_int)
   
