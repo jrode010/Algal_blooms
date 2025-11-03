@@ -512,8 +512,8 @@ plot( x = ccm$LibMeans$LibSize,
   gnh4gpH <- loopccmlaglead(dat, 'gNH4', 'gpH', 12,4,3,4)
   gchlgpH <- loopccmlaglead(dat, 'gchl', 'gpH', 12,4,3,4)
   
-  #Garfield TP: e = 5 t = 10, er = 5 - can't run it
-  actpgTP <- loopccmlaglead_gtp(dat, 'actp', 'gTP', 12,5,10,5)
+  #Garfield TP: e = 3 t = 6, er = 4 
+  actpgTP <- loopccmlaglead(dat, 'actp', 'gTP', 12,3,6,4)
   aflowgTP <- loopccmlaglead_gtp(dat, 'aflow', 'gTP', 12,5,10,5)
   mflowgTP <- loopccmlaglead_gtp(dat, 'mflow', 'gTP', 12,5,10,5)
   mcdocgTP <- loopccmlaglead_gtp(dat, 'mcdoc', 'gTP', 12,5,10,5)
@@ -1023,6 +1023,104 @@ p <- recordPlot()
 return(p)
 }
 
+graphccmlag_rchlgtp <- function(dat, x, y, z, e, t, er){ # x = cause (string), y = effect (string), z = best lag
+  
+  df1 <- dat %>%
+    dplyr::select(date, !!sym(x), !!sym(y)) %>%
+    dplyr::rename(xvar = !!sym(x), yvar = !!sym(y))  # consistent column names for lag and ccm
+  
+  df1$date <- ymd(df1$date)
+  df1[, c("xvar", "yvar")] <- scale(df1[, c("xvar", "yvar")])
+  
+  df2 <- df1 %>%
+    mutate(ll = lag(xvar, z)) %>%
+    dplyr::select(date, yvar, ll) %>%
+    drop_na()
+  
+  libsize_str <- paste("6", nrow(df2)-12, "6")
+  ccm <- CCM(dataFrame = df2,
+             E = e, # embedding dimension
+             tau = -t, # embedding delay
+             exclusionRadius = er,  # Theiler window
+             target = "ll",       
+             libSizes = libsize_str,
+             columns = 'yvar',
+             sample = 100,
+             showPlot = FALSE,
+             parameterList = TRUE,
+             includeData = TRUE)
+  plot( x = ccm$LibMeans$LibSize,
+        y = ccm$LibMeans[,2],
+        main = 'Rankin Chlorophyll xmap Garfield Total Phosphorus',
+        ylab = "Prediction skill", xlab = "Library size",
+        ylim = range( 0, range(ccm$LibMeans[,2]), 1 ),
+        type = 'l', col = 1, lwd = 1 )
+  # grid lines
+  abline( h = axTicks(2), col = rgb(0,0,0,0.2) )
+  abline( v = axTicks(1), col = rgb(0,0,0,0.2) )
+  abline( h = 0 )
+  # results of individual tests
+  points( x = ccm$CCM1_PredictStat$LibSize,
+          y = ccm$CCM1_PredictStat$rho, 
+          pch = 16, col = rgb(1,0,0,0.1)
+  )
+  # Redraw mean prediction skill curve
+  lines( x = ccm$LibMeans$LibSize,
+         y = ccm$LibMeans[,2],
+         lwd = 3, col = 1 )
+  p <- recordPlot()
+  return(p)
+}
+
+graphccmlag_rchlgnh4 <- function(dat, x, y, z, e, t, er){ # x = cause (string), y = effect (string), z = best lag
+  
+  df1 <- dat %>%
+    dplyr::select(date, !!sym(x), !!sym(y)) %>%
+    dplyr::rename(xvar = !!sym(x), yvar = !!sym(y))  # consistent column names for lag and ccm
+  
+  df1$date <- ymd(df1$date)
+  df1[, c("xvar", "yvar")] <- scale(df1[, c("xvar", "yvar")])
+  
+  df2 <- df1 %>%
+    mutate(ll = lag(xvar, z)) %>%
+    dplyr::select(date, yvar, ll) %>%
+    drop_na()
+  
+  libsize_str <- paste("6", nrow(df2)-12, "6")
+  ccm <- CCM(dataFrame = df2,
+             E = e, # embedding dimension
+             tau = -t, # embedding delay
+             exclusionRadius = er,  # Theiler window
+             target = "ll",       
+             libSizes = libsize_str,
+             columns = 'yvar',
+             sample = 100,
+             showPlot = FALSE,
+             parameterList = TRUE,
+             includeData = TRUE)
+  plot( x = ccm$LibMeans$LibSize,
+        y = ccm$LibMeans[,2],
+        main = 'Rankin Chlorophyll xmap Garfield Ammonium',
+        ylab = "Prediction skill", xlab = "Library size",
+        ylim = range( 0, range(ccm$LibMeans[,2]), 1 ),
+        type = 'l', col = 1, lwd = 1 )
+  # grid lines
+  abline( h = axTicks(2), col = rgb(0,0,0,0.2) )
+  abline( v = axTicks(1), col = rgb(0,0,0,0.2) )
+  abline( h = 0 )
+  # results of individual tests
+  points( x = ccm$CCM1_PredictStat$LibSize,
+          y = ccm$CCM1_PredictStat$rho, 
+          pch = 16, col = rgb(1,0,0,0.1)
+  )
+  # Redraw mean prediction skill curve
+  lines( x = ccm$LibMeans$LibSize,
+         y = ccm$LibMeans[,2],
+         lwd = 3, col = 1 )
+  p <- recordPlot()
+  return(p)
+}
+
 #area - e = 3, t = 4, er = 5
 glagacdocarea <- graphccmlag(dat, 'acdoc', 'mean_area', 5, 3, 4, 5)
 glagacdocarea
@@ -1043,13 +1141,15 @@ lagacdocnorthing <- graphccmlag(dat, 'acdoc', 'northing', 7, 3, 2, 4) #nope
 
 #rchl - e = 3, t = 3, er = 2
 glaggchlrchl <- graphccmlag(dat, 'gchl', 'rchl', 11, 3, 3, 2)
-glaggtprchl <- graphccmlag(dat, 'gTP', 'rchl', 10, 3, 3, 2) #ish
+glaggtprchl <- graphccmlag_rchlgtp(dat, 'gTP', 'rchl', 10, 3, 3, 2) #ish
 glagcnh4rchl <- graphccmlag(dat, 'cNH4', 'rchl', 5, 3, 3, 2) #nope
 glagdcbrerchl <- graphccmlag(dat, 'dcbre', 'rchl', 6, 3, 3, 2) #amazing
 glagetprchl <- graphccmlag(dat, 'eTP', 'rchl', 2, 3, 3, 2) #nope
 glagrtnrchl <- graphccmlag(dat, 'rTN', 'rchl', 0, 3, 3, 2)
 glagrtprchl <- graphccmlag(dat, 'rTP', 'rchl', 0, 3, 3, 2)
 glagjturbrchl <- graphccmlag(dat, 'jturb', 'rchl', 8, 3, 3, 2)
+glaggnh4rchl <- graphccmlag_rchlgnh4(dat, 'gNH4', 'rchl', 3, 3, 3, 2) #ish
+glaggtnrchl <- graphccmlag(dat, 'gTN', 'rchl', 11, 3, 3, 2) #ish
 
 #jchl - e = 3, t = 4, er = 4
 glagcDOjchl <- graphccmlag(dat, 'cDO', 'jchl', 1, 3, 4, 4)
