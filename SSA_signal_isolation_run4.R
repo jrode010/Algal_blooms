@@ -10,7 +10,7 @@ library(tidyverse)
 #### Load data#####
   dat2 <- read.csv(file = 'coastal_data_month.csv')
   
-  dat <- dat %>% dplyr::select(-c(oflow, omaxstage, omeanstage, ominstage, wflow, wmeanstage, gNN, gNO3, gNO2, gAP, gOP, rNN, rNO3, rNO2, rAP, rOP, gchlb, rchlb))
+  dat <- dat2 %>% dplyr::select(-c(oflow, omaxstage, omeanstage, ominstage, wflow, wmeanstage, gNN, gNO3, gNO2, gAP, gOP, rNN, rNO3, rNO2, rAP, rOP, gchlb, rchlb))
 
   str(dat)
   
@@ -30,12 +30,12 @@ library(tidyverse)
   dat$BR[1] <- dat$BR[2]
   dat$BRE[1] <- dat$BRE[2]
   
-  dat <- dat %>% dplyr::select(-c(mcnn, acnn, mcno3, acno3, mcno2, acno2, mcsrp, acsrp))
+  dat2 <- dat2 %>% dplyr::select(-c(mcnn, acnn, mcno3, acno3, mcno2, acno2, mcsrp, acsrp))
   
   dat_int <- dat2 %>% dplyr::select(-date) %>% 
     mutate(across(everything(), ~ na.approx(., na.rm = FALSE)))
   dat_int <- dat_int %>% slice(2:(n()-1))
-  dat_int$date <- dat$date
+  dat_int$date <- dat2$date
   
   dat_int <- dat_int %>% dplyr::filter(date < ymd('2020-01-01'))
   
@@ -79,11 +79,16 @@ ms_int <- dat_int %>% dplyr::select(chp_stage)
 ms_int <- ms_int %>% slice(2:(n()-1))
 ms_inc <- ms_int %>% mutate(across(everything(), ~. - mean(., na.rm = F)))
 
+gspH <- datg %>% dplyr::select(date, gspH) %>% filter(date > ymd('2011-01-01')) %>% filter(date < ymd('2024-12-01')) %>% mutate(gspH = na.approx(gspH, x = date))
+str(dat_int$date)
+plot <- ggplot(dat_int, aes(x = ymd(date), y = gpH)) +
+  geom_line(na.rm = T)
+plot
 #### Plot frequencies######## Plot frequencBREies####
   # select dat column
-    colnames( ms_inc )
-    var <- 'chp_stage'
-    x <- ms_inc[,var]
+    colnames( dat_int )
+    var <- 'area'
+    x <- dat_int[,var]
   # Fourier transform
     spec <- spectrum( x, method = 'pgram', plot = FALSE )
     df <- data.frame( power = spec$spec, period = 1/spec$freq )

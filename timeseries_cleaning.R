@@ -583,6 +583,12 @@ plot <- ggplot(gspH, aes(x = date, y = gspH)) +
   geom_line(na.rm = T)
 plot
 
+
+gpH <- datg %>% dplyr::select(date, gpH) %>% filter(date > ymd('2011-01-01')) %>% filter(date < ymd('2024-12-01')) %>% mutate(gspH = na.approx(gspH, x = date))
+
+plot <- ggplot(gspH, aes(x = date, y = gspH)) +
+  geom_line(na.rm = T)
+plot
 summary(lm(gspH~date, data = gspH))
 
 #tspH
