@@ -806,6 +806,7 @@ for (v in vars_to_map) {
 
 #Mapping sediment stable isotopes
 sed <- read.csv('Data/Current_day/Sed_SIA.csv')
+sites <- read.csv('Data/Current_day/site_metadata.csv')
 df <- merge(sed, sites, by = 'Site_code')
 
 vars_to_map <- c('S34', 'N15', 'C13')
@@ -866,6 +867,94 @@ for (v in vars_to_map) {
   
   # Open a new TIFF file for each variable
   tiff(paste0("map_", v, "_sed_SIA.tif"),
+       width = 12, height = 10, units = "in", res = 300)
+  
+  p <- ggplot() +
+    geom_sf(data = shoreline, fill = "gray85", color = "black") +
+    geom_point(data = df_var,
+               aes(x = Longitude, y = Latitude, size = value, color = value),
+               alpha = 0.7) +
+    scale_size_continuous(range = c(1, 8)) +
+    scale_color_viridis_c(option = "plasma") +
+    coord_sf(xlim = xlim, ylim = ylim, expand = FALSE) +
+    facet_wrap(~Sampling_event, nrow = 2, ncol = 2, drop = TRUE) +
+    labs(
+      title = paste(v, "across Sampling Events"),
+      size = "Value", color = "Value"
+    ) +
+    theme_void(base_size = 12) +
+    theme(
+      legend.position = "right",
+      strip.text = element_text(face = "bold"),
+      plot.title = element_text(face = "bold", hjust = 0.5)
+    )
+  
+  print(p)
+  dev.off()  # Close this TIFF before moving to the next variable
+}
+
+#Mapping water stable isotopes
+wat <- read.csv('Data/Current_day/water_SIA.csv')
+df <- merge(wat, sites, by = 'Site_code')
+
+vars_to_map <- c('N15', 'C13')
+
+df_long <- df %>%
+  pivot_longer(cols = all_of(vars_to_map),
+               names_to = "variable",
+               values_to = "value")
+#zoomed out map figure
+# Variables to map
+vars_to_map <- c('N15', 'C13')
+
+# --- Load shapefile (Florida shoreline) ---
+shoreline <- st_read("south_florida_detailed.shp") %>%
+  st_transform(crs = 4326)
+
+
+# plot(shoreline)
+
+# --- Compute bounding box of your data & zoom out a little ---
+lon_range <- range(df_long$Longitude, na.rm = TRUE)
+lat_range <- range(df_long$Latitude, na.rm = TRUE)
+
+lon_pad <- diff(lon_range) * 0.15  # more zoom-out padding
+lat_pad <- diff(lat_range) * 0.15
+
+xlim <- c(lon_range[1] - lon_pad, lon_range[2] + lon_pad)
+ylim <- c(lat_range[1] - lat_pad, lat_range[2] + lat_pad)
+
+# Summarize all variables at once (just clean & filter)
+df_plot <- df_long %>%
+  filter(variable %in% vars_to_map) %>%
+  filter(!is.na(Longitude), !is.na(Latitude), !is.na(value)) %>%
+  mutate(in_extent = Longitude >= xlim[1] & Longitude <= xlim[2] &
+           Latitude  >= ylim[1]  & Latitude  <= ylim[2]) %>%
+  filter(in_extent)
+
+
+#Lock variable order for facets
+df_plot$variable <- factor(df_plot$variable, levels = vars_to_map)
+
+# Lock event order
+event_levels <- c('9-23','1-24', '4-24', '8-24')
+df_plot$Sampling_event <- factor(df_plot$Sampling_event, levels = event_levels[event_levels %in% unique(df_plot$Sampling_event)])
+
+# Save TIFF
+# Create TIFF
+for (v in vars_to_map) {
+  message("Processing variable: ", v)
+  
+  df_var <- df_plot %>%
+    filter(variable == v,
+           Sampling_event %in% event_levels,
+           !is.na(Longitude), !is.na(Latitude), !is.na(value)) %>%
+    mutate(Sampling_event = factor(Sampling_event, levels = event_levels))
+  
+  if (nrow(df_var) == 0) next
+  
+  # Open a new TIFF file for each variable
+  tiff(paste0("map_", v, "_water_SIA.tif"),
        width = 12, height = 10, units = "in", res = 300)
   
   p <- ggplot() +
