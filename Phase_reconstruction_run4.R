@@ -16,7 +16,7 @@ dat <- cbind(dat, dat2)
 write.csv(dat, file = 'SSA_run4_wcumflowccgnh4ecdcjg.csv') 
 
 colnames( dat )
-  var <- 'gPH'
+  var <- 'gchl'
   x <- dat[,var] |> na.omit()
   x <- scale( x )
 

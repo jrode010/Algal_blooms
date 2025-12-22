@@ -34,11 +34,11 @@ head(dat2)
 dat2 <- dat2 %>% dplyr::filter(date > ymd('2010-01-01')) %>% dplyr::filter(date < ymd('2025-01-01'))
 
 dat_int <- dat2 %>% dplyr::select(-date) %>% 
-  mutate(across(everything(), ~ na.approx(., na.rm = FALSE))) %>% drop_na()
+  mutate(across(everything(), ~ na.approx(., na.rm = FALSE)))
 
 dat_date <- dat2 %>% dplyr::select(date)
 
-dat3 <- cbind(dat_date, dat_int)
+dat3 <- cbind(dat_date, dat_int) %>% drop_na()
 str(dat3)
 
 ggplot()+
@@ -170,21 +170,46 @@ breakpoint_analysis_chl <- function(
     ))
   }
   
-  # ---- MEAN MODEL: manual ICs over k = 0..cap_b ----
-  ics_mean <- bic_aic_manual(y_for_mean, h = min_seg_months, K = cap_b)
+  # ---- MEAN MODEL ----
+  
+  # 1. Create a local dataframe for the mean model
+  # This ensures 'confint' can always find the data later
+  df_mean_model <- tibble(y = y_for_mean)
+  
+  # 2. Calculate the FULL PATH (for sctest/IC selection) using the dataframe
+  # Note: we use 'y ~ 1' and 'data = df_mean_model'
+  bp_mean_path <- breakpoints(y ~ 1, data = df_mean_model, h = min_seg_months, breaks = cap_b)
+  
+  # 3. Manual ICs selection
+  ics_mean <- bic_aic_manual(df_mean_model$y, h = min_seg_months, K = cap_b)
   k_sel_mean <- with(ics_mean, if (ic == "BIC") k[which.min(BIC)] else k[which.min(AIC)])
   
-  # Global supF (H0: no break) on the *path* up to cap_b (for a p-value)
-  bp_mean_path <- breakpoints(y_for_mean ~ 1, h = min_seg_months, breaks = cap_b)
+  # 4. Global SupF test
   test_global_mean <- {
-    out <- tryCatch(sctest(bp_mean_path, type = "supF"), error = function(e) NULL)
+    out <- tryCatch(
+      strucchange::sctest(y ~ 1, data = df_mean_model, type = "supF", from = min_seg_months/n), 
+      error = function(e) NULL
+    )
     if (is.null(out)) tibble(test="supF", statistic=NA_real_, p_value=NA_real_)
     else tibble(test="supF", statistic=unname(out$statistic), p_value=unname(out$p.value))
   }
   
-  # Fit at selected k (if > 0) and extract CI table
-  bp_mean <- if (k_sel_mean > 0L)
-    breakpoints(y_for_mean ~ 1, h = min_seg_months, breaks = k_sel_mean) else NULL
+  # 5. Get F-stat/p-value for the SPECIFIC best k (using the path)
+  bp_test_k <- if (k_sel_mean > 0L) {
+    tryCatch(sctest(bp_mean_path, breaks = k_sel_mean), error = function(e) NULL)
+  } else NULL
+  
+  p_table_mean <- if (is.null(bp_test_k)){
+    tibble(test = "supF_best_k", statistic = NA_real_, p_value = NA_real_)
+  } else {
+    tibble(test = "supF_best_k", statistic = unname(bp_test_k$statistic), p_value = unname(bp_test_k$p.value))
+  }
+  
+  # 6. REFIT the specific model explicitly for CI calculation
+  # We refrain from extracting from 'path' to ensure the object is fresh and has the data attached
+  bp_mean <- if (k_sel_mean > 0L) {
+    breakpoints(y ~ 1, data = df_mean_model, h = min_seg_months, breaks = k_sel_mean)
+  } else NULL
   
   mean_tbl <- if (is.null(bp_mean)) {
     tibble(method = "strucchange_mean",
@@ -203,21 +228,38 @@ breakpoint_analysis_chl <- function(
       n_breaks = k_sel_mean
     )
   }
-  
-  # ---- TREND (slope) MODEL: keep original IC selection (quick) ----
+    
+    # ---- TREND (slope) MODEL: keep original IC selection (quick) ----
   bp_trend_all <- breakpoints(df_clean$chl ~ df_clean$t_idx, h = min_seg_months, breaks = cap_b)
   bic_trnd <- BIC(bp_trend_all); aic_trnd <- AIC(bp_trend_all)
   k_sel_trend <- if (ic == "BIC") which.min(bic_trnd) - 1L else which.min(aic_trnd) - 1L
   
   test_global_trend <- {
-    out <- tryCatch(sctest(bp_trend_all, type = "supF"), error = function(e) NULL)
-    if (is.null(out)) tibble(test="supF", statistic=NA_real_, p_value=NA_real_)
-    else tibble(test="supF", statistic=unname(out$statistic), p_value=unname(out$p.value))
+    out <- tryCatch(
+      strucchange::sctest(df_clean$chl ~ df_clean$t_idx, type = "supF", from = min_seg_months/n),
+      error = function(e) NULL
+    )
+    
+    if (is.null(out)) {
+      tibble(test="supF", statistic=NA_real_, p_value=NA_real_)
+    } else {
+      tibble(test="supF", statistic=unname(out$statistic), p_value=unname(out$p.value))
+    }
   }
   
   bp_trend <- if (k_sel_trend > 0L)
     breakpoints(df_clean$chl ~ df_clean$t_idx, h = min_seg_months, breaks = k_sel_trend) else NULL
+  bp_trend_test_k <- if (k_sel_trend > 0L) {
+    sctest(bp_trend_all, breaks = k_sel_trend)
+  } else NULL
   
+  p_table_trend <- if (is.null(bp_trend_test_k)){
+    tibble(test = "supF_best_k", statistic = NA_real_, p_value = NA_real_)
+  } else {
+    tibble(test = "supF_best_k", 
+           statistic = unname(bp_trend_test_k$statistic), 
+           p_value = unname(bp_trend_test_k$p.value))
+  }
   trend_tbl <- if (is.null(bp_trend)) {
     tibble(method = "strucchange_trend",
            break_id = integer(), index = integer(),
@@ -279,7 +321,9 @@ breakpoint_analysis_chl <- function(
   list(
     monthly_data = monthly,
     results_mean = mean_tbl,
+    stats_mean   = p_table_mean,
     results_trend = trend_tbl,
+    stats_trend   = p_table_trend,
     results_changepoint = cpt_tbl,
     ic_curves_mean  = ic_curves_mean,
     ic_curves_trend = ic_curve_trend,
@@ -290,16 +334,218 @@ breakpoint_analysis_chl <- function(
   )
 }
 
-#run the breakpoint analysis - garfield
+
+breakpoint_analysis_chl <- function(
+    data,
+    date_col = "date",
+    value_col = "chl",
+    min_seg_months = 12,
+    max_breaks = 5,
+    manual_breaks = NULL,
+    deseason_stl = TRUE,
+    ic = c("BIC","AIC")      
+){
+  ic <- match.arg(ic)
+  
+  library(tidyverse); library(lubridate); library(zoo)
+  library(strucchange); library(changepoint)
+  
+  # ---- 1. Data Cleaning & Regularization ----
+  dat <- data %>%
+    mutate(.date = as.Date(.data[[date_col]]),
+           .value = as.numeric(.data[[value_col]])) %>%
+    filter(!is.na(.date)) %>%
+    mutate(.ym = as.yearmon(.date)) %>%
+    group_by(.ym) %>%
+    summarize(chl = mean(.value, na.rm = TRUE), .groups = "drop") %>%
+    arrange(.ym)
+  
+  full_ym <- seq(min(dat$.ym), max(dat$.ym), by = 1/12)
+  monthly <- tibble(.ym = full_ym) %>%
+    left_join(dat, by = ".ym") %>%
+    mutate(date = as.Date(.ym))
+  
+  df_clean <- monthly %>% drop_na(chl) %>% mutate(t_idx = row_number())
+  n <- nrow(df_clean)
+  
+  max_feasible <- max(0L, floor(n / min_seg_months) - 1L)
+  
+  # Set breaks to compute
+  breaks_to_compute <- if (!is.null(manual_breaks)) manual_breaks else min(max_breaks, max_feasible)
+  
+  if (breaks_to_compute > max_feasible) {
+    warning(paste("Requested", breaks_to_compute, "breaks, but only", max_feasible, "are feasible. Using max."))
+    breaks_to_compute <- max_feasible
+  }
+  
+  # ---- 2. Prepare Series ----
+  y_for_mean <- df_clean$chl
+  if (deseason_stl) {
+    ts_chl <- ts(df_clean$chl, frequency = 12)
+    stl_fit <- stl(ts_chl, s.window = "periodic", robust = TRUE)
+    y_for_mean <- as.numeric(ts_chl - stl_fit$time.series[, "seasonal"])
+  }
+  
+  # Return early if 0 breaks
+  if (breaks_to_compute == 0L) {
+    base <- ggplot(monthly, aes(date, chl)) + geom_line() + theme_classic()
+    return(list(monthly_data=monthly, results_mean=tibble(n_breaks=0), plot_mean=base))
+  }
+  
+  # ---- 3. MEAN MODEL ----
+  
+  # A. Calculate Path
+  df_mean_model <- tibble(y = y_for_mean)
+  bp_mean_path <- breakpoints(y ~ 1, data = df_mean_model, h = min_seg_months, breaks = breaks_to_compute)
+  
+  # B. Select k (Manual or IC)
+  if (!is.null(manual_breaks)) {
+    k_sel_mean <- breaks_to_compute
+    ics_mean <- tibble(n_breaks = k_sel_mean, BIC = NA, AIC = NA, model = "manual")
+  } else {
+    ics_mean <- bic_aic_manual(df_mean_model$y, h = min_seg_months, K = breaks_to_compute)
+    k_sel_mean <- with(ics_mean, if (ic == "BIC") k[which.min(BIC)] else k[which.min(AIC)])
+  }
+  
+  # C. STATS: Robust Manual ANOVA
+  # We compare the Null Model (1 mean) vs Alt Model (k+1 means) using standard F-test
+  if (k_sel_mean > 0) {
+    # 1. Get break indices
+    bp_idx <- breakpoints(bp_mean_path, breaks = k_sel_mean)$breakpoints
+    
+    # 2. Create a factor for segments
+    # breakfactor() creates a factor vector labeling segment 1, segment 2, etc.
+    fac_seg <- breakfactor(bp_mean_path, breaks = k_sel_mean)
+    
+    # 3. Fit models
+    mod0 <- lm(y ~ 1, data = df_mean_model)       # Null: No breaks
+    mod1 <- lm(y ~ fac_seg, data = df_mean_model) # Alt: Different mean per segment
+    
+    # 4. ANOVA
+    test_res <- anova(mod0, mod1)
+    
+    p_table_mean <- tibble(
+      test = paste0("F_test (k=", k_sel_mean, ")"),
+      statistic = test_res$F[2],     # The F-stat is in the 2nd row
+      p_value = test_res$`Pr(>F)`[2] # The P-value is in the 2nd row
+    )
+  } else {
+    p_table_mean <- tibble(test = "None", statistic = NA_real_, p_value = NA_real_)
+  }
+  
+  # D. Refit and CIs
+  bp_mean <- if (k_sel_mean > 0L) {
+    breakpoints(y ~ 1, data = df_mean_model, h = min_seg_months, breaks = k_sel_mean)
+  } else NULL
+  
+  mean_tbl <- if (is.null(bp_mean)) {
+    tibble(method="strucchange_mean", n_breaks=0L)
+  } else {
+    ci_obj <- tryCatch(suppressWarnings(confint(bp_mean)), error=function(e) NULL)
+    idx <- bp_mean$breakpoints
+    
+    if(is.null(ci_obj)) { 
+      cil <- idx; ciu <- idx 
+    } else { 
+      ci_mat <- ci_obj$confint
+      cil <- ifelse(is.na(ci_mat[,1]), idx, ci_mat[,1])
+      ciu <- ifelse(is.na(ci_mat[,2]), idx, ci_mat[,2])
+    }
+    
+    tibble(
+      method   = "strucchange_mean",
+      break_id = seq_along(idx),
+      index    = idx,
+      date     = df_clean$date[idx],
+      ci_lower = df_clean$date[pmax(1, floor(cil))],
+      ci_upper = df_clean$date[pmin(n, ceiling(ciu))],
+      n_breaks = k_sel_mean
+    )
+  }
+  
+  # ---- 4. TREND MODEL ----
+  
+  # A. Calculate Path
+  bp_trend_all <- breakpoints(df_clean$chl ~ df_clean$t_idx, h = min_seg_months, breaks = breaks_to_compute)
+  
+  # B. Select k
+  if (!is.null(manual_breaks)) {
+    k_sel_trend <- breaks_to_compute
+    ic_curve_trend <- tibble(n_breaks=k_sel_trend, BIC=NA, AIC=NA)
+  } else {
+    bic_trnd <- BIC(bp_trend_all); aic_trnd <- AIC(bp_trend_all)
+    k_sel_trend <- if (ic == "BIC") which.min(bic_trnd)-1L else which.min(aic_trnd)-1L
+    ic_curve_trend <- tibble(n_breaks=0:breaks_to_compute, BIC=bic_trnd, AIC=aic_trnd)
+  }
+  
+  # C. STATS: Robust Manual ANOVA for Trend
+  if (k_sel_trend > 0) {
+    fac_seg_tr <- breakfactor(bp_trend_all, breaks = k_sel_trend)
+    
+    # Null: Single Intercept + Single Slope
+    mod0_tr <- lm(chl ~ t_idx, data = df_clean)
+    
+    # Alt: Intercept + Slope *for each segment*
+    # Interaction (t_idx * fac_seg_tr) allows slope to change. 
+    # fac_seg_tr allows intercept to change.
+    mod1_tr <- lm(chl ~ t_idx * fac_seg_tr, data = df_clean)
+    
+    test_res_tr <- anova(mod0_tr, mod1_tr)
+    
+    p_table_trend <- tibble(
+      test = paste0("F_test (k=", k_sel_trend, ")"),
+      statistic = test_res_tr$F[2],
+      p_value = test_res_tr$`Pr(>F)`[2]
+    )
+  } else {
+    p_table_trend <- tibble(test = "None", statistic = NA_real_, p_value = NA_real_)
+  }
+  
+  # D. Refit and CIs
+  bp_trend <- if (k_sel_trend > 0L) breakpoints(df_clean$chl ~ df_clean$t_idx, h=min_seg_months, breaks=k_sel_trend) else NULL
+  
+  trend_tbl <- if (is.null(bp_trend)) tibble(method="strucchange_trend", n_breaks=0L) else {
+    ci_obj <- tryCatch(suppressWarnings(confint(bp_trend)), error=function(e) NULL)
+    idx <- bp_trend$breakpoints
+    if(is.null(ci_obj)) { cil<-idx; ciu<-idx } else { cil<-ifelse(is.na(ci_obj$confint[,1]), idx, ci_obj$confint[,1]); ciu<-ifelse(is.na(ci_obj$confint[,2]), idx, ci_obj$confint[,2]) }
+    tibble(method="strucchange_trend", break_id=seq_along(idx), index=idx, date=df_clean$date[idx],
+           ci_lower=df_clean$date[pmax(1, floor(cil))], ci_upper=df_clean$date[pmin(n, ceiling(ciu))], n_breaks=k_sel_trend)
+  }
+  
+  # ---- 5. Plots ----
+  base <- ggplot(monthly, aes(date, chl)) + geom_line(linewidth = 1.2, color = 'green4') + theme_classic() + labs(x = NULL, y = "Chlorophyll (ug/L)")
+  
+  p_mean <- base + 
+    { if("ci_lower" %in% names(mean_tbl)) geom_rect(data=mean_tbl, aes(xmin=ci_lower, xmax=ci_upper, ymin=-Inf, ymax=Inf), inherit.aes=FALSE, alpha=0.12) } +
+    { if("date" %in% names(mean_tbl)) geom_vline(data=mean_tbl, aes(xintercept=as.numeric(date)), linetype=2, color='red') } +
+    labs(title = paste0("Mean-shift: ", k_sel_mean, " breaks (", if(deseason_stl) "STL" else "Raw", ")"))
+  
+  p_trend <- base + 
+    { if("ci_lower" %in% names(trend_tbl)) geom_rect(data=trend_tbl, aes(xmin=ci_lower, xmax=ci_upper, ymin=-Inf, ymax=Inf), inherit.aes=FALSE, alpha=0.12) } +
+    { if("date" %in% names(trend_tbl)) geom_vline(data=trend_tbl, aes(xintercept=as.numeric(date)), linetype=2, color='red') } +
+    labs(title = paste0("Trend-shift: ", k_sel_trend, " breaks"))
+  
+  # Return
+  list(
+    results_mean = mean_tbl,
+    stats_mean   = p_table_mean,
+    results_trend = trend_tbl,
+    stats_trend   = p_table_trend,
+    ic_curves_mean = ics_mean,
+    plot_mean = p_mean,
+    plot_trend = p_trend
+  )
+}
+#run the breakpoint analysis - rankin
 out_bic <- breakpoint_analysis_chl(
   dat3, date_col="date", value_col="rchl",
-  min_seg_months=12, max_breaks=6,
+  min_seg_months=12, max_breaks=6, manual_breaks = 1,
   deseason_stl=TRUE, ic="BIC"
 )
-
+out_bic$stats_mean
 out_bic$results_mean
 out_bic$plot_mean
-
+out_bic$plot_trend
 
 #run the breakpoint analysis - tsflow
 
@@ -312,7 +558,7 @@ tsflowmonth <- tsflow %>% group_by(month) %>% summarize(mean = mean(Data.Value),
 
 out_bic <- breakpoint_analysis_chl(
   tsflowmonth, date_col="month", value_col="mean",
-  min_seg_months=12, max_breaks=6,
+  min_seg_months=12, max_breaks=6, 
   deseason_stl=TRUE, ic="BIC"
 )
 
@@ -467,21 +713,23 @@ ggplot() +
   theme_classic()
 
 ggplot() +
-  geom_line(data = dat3, aes(x = date, y = rchl), color = "darkgreen") +
+  geom_line(data = dat3, aes(x = date, y = rchl), linewidth = 1.5, color = "darkgreen") +
   # horizontal means
   geom_segment(aes(x = ymd("2011-02-01"), xend = ymd("2016-06-01"),
-                   y = 0.93, yend = 0.93)) +
+                   y = 0.93, yend = 0.93), linewidth = 1.2) +
   geom_segment(aes(x = ymd("2016-07-01"), xend = ymd("2024-12-01"),
-                   y = 6.97, yend = 6.97)) +
+                   y = 6.97, yend = 6.97), linewidth = 1.2) +
   # CIs as rectangles (was ribbon)
   annotate("rect", xmin = ymd("2011-02-01"), xmax = ymd("2016-06-01"),
            ymin = 0.79, ymax = 1.07, alpha = 0.3) +
   annotate("rect", xmin = ymd("2016-07-01"), xmax = ymd("2024-12-01"),
            ymin = 6, ymax = 7.94, alpha = 0.3) +
   # breakpoint and its CI window
-  geom_vline(xintercept = as.Date("2016-06-01"), color = "darkblue") +
-  labs(x = "Date", y = "Rankin Chlorophyll") +
-  theme_classic()
+  geom_vline(xintercept = as.Date("2016-06-01"), color = "darkblue", linewidth = 1.5) +
+  labs(x = "Date", y = "Chlorophyll (ug/L)") +
+  theme_classic()+
+  theme(axis.title =element_text(size=14,face="bold"))
+
 
 ?geom_hline
 #garfield time series has 5 breakpoints, first one in 2016 most significant

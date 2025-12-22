@@ -51,6 +51,7 @@ library(tidyverse)
   
   dat_int$acdoc[nrow(dat_int)] <- 1900
   
+  mean(dat_int$acdoc)
   write.csv(dat_int, file = 'field_dat_sat_timeline.csv')
   
   dat_inc <- dat_int %>% mutate(across(everything(), ~. - mean(., na.rm = F)))
@@ -86,9 +87,9 @@ plot <- ggplot(dat_int, aes(x = ymd(date), y = gpH)) +
 plot
 #### Plot frequencies######## Plot frequencBREies####
   # select dat column
-    colnames( dat_int )
-    var <- 'area'
-    x <- dat_int[,var]
+    colnames( dat_inc )
+    var <- 'rturb'
+    x <- dat_inc[,var]
   # Fourier transform
     spec <- spectrum( x, method = 'pgram', plot = FALSE )
     df <- data.frame( power = spec$spec, period = 1/spec$freq )
@@ -212,8 +213,8 @@ plot
     grp <- list(c(1,2,3,4), c(5,6,7)) #jpH
     grp <- list(c(1,2), c(3,5), c(4,6), c(7,8), c(9,10,11,12,13,14,15,16)) #jchl
     grp <- list(c(1,2), c(3,4), c(5,6), c(7,8), c(9,10)) #marsh stage
-
-
+    grp <- list(c(1,2), c(3,4), c(5,9), c(6,8), c(7,10,11,13), c(12,14,15,16,17,18,19)) #gturb
+    grp <- list(c(1,2,3,4), c(5,6), c(7,8,9,10,11,12,13,20), c(14,15,16,18), c(17,19)) #rturb
   
 # SSA reconstruction
 ##
@@ -277,11 +278,12 @@ plot
 
  ####   
     signal
-chp_stage <- data.frame(signal) %>% setNames('chp_stage')
+    
+rturb <- data.frame(signal) %>% setNames('rturb')
 
-allssa <- cbind(jNH4, jTOC, jDO, jTP, jsal, jturb, jTN, jpH, jchl)
+allssa <- cbind(gturb, rturb)
 
-write.csv(chp_stage, file = 'SSA_chpstage.csv')
+write.csv(allssa, file = 'SSA_grturb.csv')
 
 ssadates <- cbind(allssa, dat1$date) %>% rename(date = `dat1$date`)
 write.csv(ssadates, file = 'SSA_cc_dates.csv')

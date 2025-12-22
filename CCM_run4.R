@@ -17,10 +17,12 @@ datec <- read.csv('SSA_ec.csv')
 datdc <- read.csv('SSA_dc_sentinel.csv')
 datjg <- read.csv('SSA_jg.csv')
 datchpstage <- read.csv('SSA_chpstage.csv')
+datturb <- read.csv('SSA_grturb.csv')
 colnames( dat )
 
 datsat <- datsat %>% dplyr::select(-date)
 datwind <- datwind %>% dplyr::select(-date)
+
 
 
 dat <- cbind(dat, datsat)
@@ -32,6 +34,7 @@ dat <- cbind(dat, datec)
 dat <- cbind(dat, datdc)
 dat <- cbind(dat, datjg)
 dat <- cbind(dat, datchpstage)
+dat <- cbind(dat, datturb)
 names(dat)
 
 ggplot(dat)+
@@ -312,7 +315,11 @@ plot( x = ccm$LibMeans$LibSize,
   jTNarea <- loopccmlaglead(dat, 'jTN', 'mean_area', 12,3,4,5)
   jpHarea <- loopccmlaglead(dat, 'jpH', 'mean_area', 12,3,4,5)
   jchlarea <- loopccmlaglead(dat, 'jchl', 'mean_area', 12,3,4,5)
-  
+  chp_stagearea <- loopccmlaglead(dat, 'chp_stage', 'mean_area', 12,3,4,5)
+  acnh4area <- loopccmlaglead(dat, 'acnh4', 'mean_area', 12,3,4,5)
+  acsalarea <- loopccmlaglead(dat, 'acsal', 'mean_area', 12,3,4,5)
+  rturbarea <- loopccmlaglead(dat, 'rturb', 'mean_area', 12,3,4,5)
+  gturbarea <- loopccmlaglead(dat, 'gturb', 'mean_area', 12,3,4,5)
   
 #Northing. e = 3, t = 2, er = 4
   actpnorthing <- loopccmlaglead(dat, 'actp', 'northing', 12,3,2,4)
@@ -399,6 +406,12 @@ plot( x = ccm$LibMeans$LibSize,
   jTNrchl <- loopccmlaglead(dat, 'jTN', 'rchl', 12,3,3,2)
   jpHrchl <- loopccmlaglead(dat, 'jpH', 'rchl', 12,3,3,2)
   jchlrchl <- loopccmlaglead(dat, 'jchl', 'rchl', 12,3,3,2)
+  chp_stagerchl <- loopccmlaglead(dat, 'chp_stage', 'rchl', 12,3,3,2)
+  acnh4rchl <- loopccmlaglead(dat, 'acnh4', 'rchl', 12,3,3,2)
+  acsalrchl <- loopccmlaglead(dat, 'acsal', 'rchl', 12,3,3,2)
+  aflowcumrchl <- loopccmlaglead(dat, 'aflow_cum', 'rchl', 12,3,3,2)
+  acnh4rchl <- loopccmlaglead(dat, 'acnh4', 'rchl', 12,3,3,2)
+  gturbrchl <- loopccmlaglead(dat, 'gturb', 'rchl', 12,3,3,2)
  
   #Loops for gchl: e = 4, t = 3, er = 4
   actpgchl <- loopccmlaglead(dat, 'actp', 'gchl', 12,4,3,4)
@@ -453,6 +466,12 @@ plot( x = ccm$LibMeans$LibSize,
   echlgchl <- loopccmlaglead(dat, 'echl', 'gchl', 12,4,3,4)
   dcbrgchl <- loopccmlaglead(dat, 'dcbr', 'gchl', 12,4,3,4)
   dcbregchl <- loopccmlaglead(dat, 'dcbre', 'gchl', 12,4,3,4)
+  acnh4gchl <- loopccmlaglead(dat, 'acnh4', 'gchl', 12,4,3,4)
+  chp_stagegchl <- loopccmlaglead(dat, 'chp_stage', 'gchl', 12,4,3,4)
+  aflow_cumgchl <- loopccmlaglead(dat, 'aflow_cum', 'gchl', 12,4,3,4)
+  acsalgchl <- loopccmlaglead(dat, 'acsal', 'gchl', 12,4,3,4)
+  rturbgchl <- loopccmlaglead(dat, 'rturb', 'gchl', 12,4,3,4)
+  names(dat)
   
   #loops for jchl: e = 3, t = 4, er = 4
   cnh4jchl <- loopccmlaglead(dat, 'cNH4', 'jchl', 12,3,4,4)
@@ -1133,7 +1152,7 @@ glagcchlarea <- graphccmlag(dat, 'cchl', 'mean_area', 1, 3, 4, 5)
 glagetocarea <- graphccmlag(dat, 'eTOC', 'mean_area', 5, 3, 4, 5)
 
 #gchl - e = 4, t = 3, er = 4
-laggphgchl <- graphccmlag(dat, 'gpH', 'gchl', 4, 4, 3, 4)
+lagactpgchl <- graphccmlag(dat, 'actp', 'gchl', 12, 4, 3, 4)
 laggtpgchl <- graphccmlag(dat, 'gTP', 'gchl', 10, 4, 3, 4)
 
 #northing - e = 3, t = 2, er = 4
@@ -1150,6 +1169,8 @@ glagrtprchl <- graphccmlag(dat, 'rTP', 'rchl', 0, 3, 3, 2)
 glagjturbrchl <- graphccmlag(dat, 'jturb', 'rchl', 8, 3, 3, 2)
 glaggnh4rchl <- graphccmlag_rchlgnh4(dat, 'gNH4', 'rchl', 3, 3, 3, 2) #ish
 glaggtnrchl <- graphccmlag(dat, 'gTN', 'rchl', 11, 3, 3, 2) #ish
+glaggturbrchl <- graphccmlag(dat, 'gturb', 'rchl', 11, 3, 3, 2)
+plot(glaggturbrchl)
 
 #jchl - e = 3, t = 4, er = 4
 glagcDOjchl <- graphccmlag(dat, 'cDO', 'jchl', 1, 3, 4, 4)
@@ -1199,3 +1220,90 @@ ggplot(dat)+
 
 cor.test(x = dat$jturb, y = dat$jchl)
 
+#time series of causal variables
+datcdom <- read.csv('sentinel_cdom.csv')
+datcdom$date <- ymd(datcdom$date)
+datcdom$month <- month(datcdom$date)
+names(datcdom)
+str(dat)
+dat$date <- ymd(dat$date)
+
+datcdomm <- datcdom %>% dplyr::group_by(month) %>% summarize(mean = mean(BRE))
+
+dat2 <- dat %>% dplyr::select(-X) %>% dplyr::mutate(gartn = (gTN+1.418026), alcrdoc = acdoc+1797.222)
+dat2 <- dat2 %>% mutate(month = month(date))
+
+ggplot()+
+  geom_line(data = datcdom, aes(x = date, y = BRE), size = 1.5, color = 'brown4')+
+  scale_y_continuous(breaks = seq(1,4,0.5), limits = c(1,4))+
+  scale_x_date(breaks = seq(as.Date('2016-03-01'),
+                            as.Date('2024-2-28'), by = '1 year'), date_labels = '%Y')+
+  theme_classic()+
+  labs(title = 'Creek CDOM', x = 'Year', y = 'CDOM')+
+  theme(axis.text = element_text(size = 10, color = "black", face = "bold"),
+        #egend.position = 'none',
+        axis.title = element_text(size = 16, face = "bold"), 
+        plot.title = element_text(size = 16, face = "bold", hjust = 0.5))
+
+ggsave(filename = 'plots/cdom_timeseris.png')
+
+ggplot()+
+  geom_line(data = datcdomm, aes(x = month, y = mean), size = 1.5, color = 'brown4')+
+  scale_y_continuous(breaks = seq(1,4,0.5), limits = c(1,4))+
+  scale_x_continuous(breaks = seq(1,12,1), limits = c(1,12))+
+  theme_classic()+
+  labs(title = 'Monthly average Creek CDOM', x = 'Month', y = 'CDOM')+
+  theme(axis.text = element_text(size = 10, color = "black", face = "bold"),
+        #egend.position = 'none',
+        axis.title = element_text(size = 16, face = "bold"), 
+        plot.title = element_text(size = 16, face = "bold", hjust = 0.5))
+
+
+ggplot()+
+  geom_line(data = dat2, aes(x = date, y = gartn), size = 1.5, color = 'blue3')+
+  scale_y_continuous(breaks = seq(0,3,1), limits = c(0,3))+
+  scale_x_date(breaks = seq(as.Date('2016-03-01'),
+                            as.Date('2024-2-28'), by = '1 year'), date_labels = '%Y')+
+  theme_classic()+
+  labs(title = 'TN in Garfield', x = 'Year', y = 'Total Nitrogen (ug/L)')+
+  theme(axis.text = element_text(size = 10, color = "black", face = "bold"),
+        #egend.position = 'none',
+        axis.title = element_text(size = 16, face = "bold"), 
+        plot.title = element_text(size = 16, face = "bold", hjust = 0.5))
+dat2m <- dat2 %>% dplyr::group_by(month) %>% summarize(gartn = mean(gartn), alcrdoc = mean(alcrdoc))
+ggplot()+
+  geom_line(data = dat2m, aes(x = month, y = gartn), size = 1.5, color = 'blue3')+
+  scale_y_continuous(breaks = seq(0,3,1), limits = c(0,3))+
+  scale_x_continuous(breaks = seq(1,12,1), limits = c(1,12))+
+  theme_classic()+
+  labs(title = 'Monthly average TN in Garfield', x = 'Month', y = 'Total Nitrogen (ug/L)')+
+  theme(axis.text = element_text(size = 10, color = "black", face = "bold"),
+        #egend.position = 'none',
+        axis.title = element_text(size = 16, face = "bold"), 
+        plot.title = element_text(size = 16, face = "bold", hjust = 0.5))
+ggsave(filename = 'plots/gTN_timeseries.png')
+
+ggplot()+
+  geom_line(data = dat2, aes(x = date, y = alcrdoc), size = 1.5, color = '#CC5500')+
+  scale_y_continuous(breaks = seq(1000,3000,1000), limits = c(1000,3000))+
+  scale_x_date(breaks = seq(as.Date('2016-03-01'),
+                            as.Date('2024-2-28'), by = '1 year'), date_labels = '%Y')+
+  theme_classic()+
+  labs(title = 'DOC in Alligator Creek', x = 'Year', y = 'Dissolved Organic Carbon (ug/L)')+
+  theme(axis.text = element_text(size = 10, color = "black", face = "bold"),
+        #egend.position = 'none',
+        axis.title = element_text(size = 16, face = "bold"), 
+        plot.title = element_text(size = 16, face = "bold", hjust = 0.5))
+
+ggplot()+
+  geom_line(data = dat2m, aes(x = month, y = alcrdoc), size = 1.5, color = '#CC5500')+
+  scale_y_continuous(breaks = seq(1000,3000,1000), limits = c(1000,3000))+
+  scale_x_continuous(breaks = seq(1,12,1), limits = c(1,12))+
+  theme_classic()+
+  labs(title = 'Monthly average DOC in Alligator Creek', x = 'Month', y = 'Dissolved Organic Carbon (ug/L)')+
+  theme(axis.text = element_text(size = 10, color = "black", face = "bold"),
+        #egend.position = 'none',
+        axis.title = element_text(size = 16, face = "bold"), 
+        plot.title = element_text(size = 16, face = "bold", hjust = 0.5))
+
+ggsave(filename = 'plots/acdoc_timeseries.png')

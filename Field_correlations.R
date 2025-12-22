@@ -242,8 +242,16 @@ for (i in 1:nrow(wqnut)) {
     wqnut$Sampling_event[i] <- '9-23'
   }
 }
+unique(wqnut$Sampling_event)
+
+for (i in 1:nrow(wqnut)) {
+  if (wqnut$Sampling_event[i] == '1123E'){
+    wqnut$Sampling_event[i] <- '11-23'
+  } 
+}
+
 head(wqsonde)
-wqsonde <- wqsonde %>% dplyr::select(Site_code, Sampling_event, Sample_code, Temp, DO, Salinity, pH, NTU, FDOM_RFU)
+wqsonde <- wqsonde %>% dplyr::select(Site_code, Sampling_event, Sample_code, Temp, DO, Salinity, pH, NTU)
 str(wqsonde)
 unique(wqsonde$Sampling_event)
 for (i in 1:nrow(wqsonde)) {
@@ -261,8 +269,8 @@ for (i in 1:nrow(wqsonde)) {
     wqsonde$Sampling_event[i] <- '8-24'
   } else if (wqsonde$Sampling_event[i] == '23-Sep'){
     wqsonde$Sampling_event[i] <- '9-23'
-  } else if (wqsonde$Sampling_event[i] == '11_23'){
-    wqsonde$Sampling_event[i] <- '1123E'
+  } else if (wqsonde$Sampling_event[i] == '1123E'){
+    wqsonde$Sampling_event[i] <- '11-23'
 }}
 head(wqnut)
 wqnut_dis <- wqnut %>% dplyr::filter(is.na(NO2.N_um.L) == F) %>% dplyr::select(Sample_code, Site_code, Sampling_event, N.N_um.L, NO2.N_um.L, NO3.N_um.L, NH3.NH4.N_um.L, SRP_um.L) %>% distinct()
@@ -274,7 +282,7 @@ str(wqnut_dis)
 wq1 <- merge(wqsonde1, wqnut_dis, by = c('Site_code', 'Sampling_event'))
 wq2 <- merge(wq1, wqnut_tot, by = c('Site_code', 'Sampling_event'))
 wq3 <- merge(wq2, wqchl, by = c('Site_code', 'Sampling_event')) %>% distinct() 
-
+wq4 <- merge(wqnut_tot, wqnut_dis, by = c('Site_code', 'Sampling_event'))
 write.csv(wq3, file = 'Data/Current_day/combined.csv')
 
 cor_tot <- read.csv('Correlations/combined.csv')
@@ -369,34 +377,27 @@ for (resp in responses) {
 }
 
 
-df <- wq3 %>%
+df <- wq4 %>%
   rename(
-    temp = Temp,
-    turbidity = NTU,
-    salinity = Salinity,
     NO2 = NO2.N_um.L,
     NH4 = NH3.NH4.N_um.L,
     TOC = TOC_um.L,
     TP = TP_um.L,
-    TN = TN_um.L,
-    chlorophyll = Chl
+    TN = TN_um.L
   )
-for (i in (1:nrow(df))){
-  if (df$Sampling_event[i] == '1123E'){
-    df$Sampling_event[i] <-  '11-23'
-  }
-}
+
 df <- df %>% mutate(Sampling_event = factor(Sampling_event, levels = c('9-23', '11-23', '1-24', '4-24', '8-24', '11-24')))
 head(df)
+df <- df %>% dplyr::rename(SRP = SRP_um.L)
 df <- df %>% dplyr::rename(Temperature = temp, Turbidity = turbidity, SRP = SRP_um.L)
-df <- df %>% dplyr::rename(Chlorophyll = chlorophyll, Salinity = salinity)
+df <- df %>% dplyr::rename(Salinity = salinity)
 str(df)
 df$SRP <- as.numeric(df$SRP)
 
 df$Salinity <- ifelse(df$Salinity > 100, 16.1, df$Salinity)
 
 df1 <- df %>% group_by(Site_code, Sampling_event) %>% mutate(Chlorophyll = mean(Chlorophyll)) %>% dplyr::select(-c(Sample_code.y.1, Rep, Sample_code.x, Sample_code.x.1, Water_amount, Collected, Processed)) %>%  distinct()
-
+df <- merge(df, sites, by = 'Site_code')
 # Variables to map
 vars_to_map <- c("Temperature", "pH", "Turbidity", 
                  "NO2", "NH4", "TOC", "TP", "TN", 
@@ -427,128 +428,7 @@ ylim <- c(lat_range[1] - lat_pad, lat_range[2] + lat_pad)
 
 
 
-# --- Save multipage PDF ---
-library(forcats)
 
-pdf("current_day_values_map_final.pdf", width = 10, height = 8)
-
-for (v in vars_to_map) {
-  
-  # 1) Start from the variable subset
-  df_var <- df_long %>%
-    filter(variable == v) %>%
-    # keep only points that will actually plot
-    filter(!is.na(Longitude), !is.na(Latitude), !is.na(value)) %>%
-    # (optional but robust) only count points inside the map window
-    mutate(in_extent = Longitude >= xlim[1] & Longitude <= xlim[2] &
-             Latitude  >= ylim[1]  & Latitude  <= ylim[2]) %>%
-    filter(in_extent)
-  
-  # 2) Find events with >= 5 plottable points
-  valid_events <- df_var %>%
-    count(Sampling_event, name = "n") %>%
-    filter(n >= 5) %>%
-    pull(Sampling_event)
-  
-  # Skip this variable if nothing qualifies
-  if (length(valid_events) == 0) next
-  event_levels <- c('9-23', '11-23', '1-24', '4-24', '8-24', '11-24')
-  # 3) Keep only valid events + drop unused levels so facets disappear
-  df_plot <- df_var %>%
-    filter(Sampling_event %in% valid_events) %>%
-    droplevels() %>%
-    # (optional) lock a custom order; otherwise it uses the present levels
-    mutate(Sampling_event = factor(Sampling_event, levels = event_levels[event_levels %in% Sampling_event]))
-  
-  p <- ggplot() +
-    geom_sf(data = shoreline, fill = "gray85", color = "black") +
-    geom_point(data = df_plot,
-               aes(x = Longitude, y = Latitude, size = value, color = value),
-               alpha = 0.7) +
-    scale_size_continuous(range = c(1, 8)) +
-    scale_color_viridis_c(option = "plasma") +
-    coord_sf(xlim = xlim, ylim = ylim, expand = FALSE) +
-    facet_wrap(~Sampling_event, drop = TRUE) +  # <- drop unused facet levels
-    labs(
-      title = paste(v, "across Sampling Events"),
-      size = "Value", color = "Value"
-    ) +
-    theme_void(base_size = 12) +
-    theme(legend.position = "right",
-          strip.text = element_text(face = "bold"))
-  
-  print(p)
-}
-
-dev.off()
-
-#Zoomed in map
-# --- Compute bounding box of your data & zoom in ---
-lon_range <- range(df_long$Longitude, na.rm = TRUE)
-lat_range <- range(df_long$Latitude, na.rm = TRUE)
-
-lon_pad <- diff(lon_range) * 0.3  # more zoom-out padding
-lat_pad <- diff(lat_range) * 0.3
-
-xlim <- c(lon_range[1] + lon_pad*1.3, lon_range[2] - lon_pad*0.66)
-ylim <- c(lat_range[1] + lat_pad*0.8, lat_range[2] - lat_pad*1.4)
-
-
-
-# --- Save multipage PDF ---
-library(forcats)
-
-pdf("current_day_values_zoomed_final.pdf", width = 10, height = 8)
-
-for (v in vars_to_map) {
-  
-  # 1) Start from the variable subset
-  df_var <- df_long %>%
-    filter(variable == v) %>%
-    # keep only points that will actually plot
-    filter(!is.na(Longitude), !is.na(Latitude), !is.na(value)) %>%
-    # (optional but robust) only count points inside the map window
-    mutate(in_extent = Longitude >= xlim[1] & Longitude <= xlim[2] &
-             Latitude  >= ylim[1]  & Latitude  <= ylim[2]) %>%
-    filter(in_extent)
-  
-  # 2) Find events with >= 5 plottable points
-  valid_events <- df_var %>%
-    count(Sampling_event, name = "n") %>%
-    filter(n >= 5) %>%
-    pull(Sampling_event)
-  
-  # Skip this variable if nothing qualifies
-  if (length(valid_events) == 0) next
-  event_levels <- c('9-23', '11-23', '1-24', '4-24', '8-24', '11-24')
-  # 3) Keep only valid events + drop unused levels so facets disappear
-  df_plot <- df_var %>%
-    filter(Sampling_event %in% valid_events) %>%
-    droplevels() %>%
-    # (optional) lock a custom order; otherwise it uses the present levels
-    mutate(Sampling_event = factor(Sampling_event, levels = event_levels[event_levels %in% Sampling_event]))
-  
-  p <- ggplot() +
-    geom_sf(data = shoreline, fill = "gray85", color = "black") +
-    geom_point(data = df_plot,
-               aes(x = Longitude, y = Latitude, size = value, color = value),
-               alpha = 0.7) +
-    scale_size_continuous(range = c(1, 8)) +
-    scale_color_viridis_c(option = "plasma") +
-    coord_sf(xlim = xlim, ylim = ylim, expand = FALSE) +
-    facet_wrap(~Sampling_event, drop = TRUE) +  # <- drop unused facet levels
-    labs(
-      title = paste(v, "across Sampling Events"),
-      size = "Value", color = "Value"
-    ) +
-    theme_void(base_size = 12) +
-    theme(legend.position = "right",
-          strip.text = element_text(face = "bold"))
-  
-  print(p)
-}
-
-dev.off()
 
 #Bar graphs
 unique(df_long$Sampling_event)
@@ -610,13 +490,15 @@ dev.off()
 
 #Plot
 # Select the variables you want in your 3x4 layout
-vars_selected <- c("Temperature", "Salinity", "DO",
-                   "Chlorophyll", "Turbidity", "pH",
-                   "TOC", "TP", "TN",
+vars_selected <- c("Turbidity", 'pH', 'DO',
+                    "TOC", "TP", "TN",
                    "NO2", "NH4", "SRP")
-
+df_long <- df %>%
+  pivot_longer(cols = all_of(vars_selected),
+               names_to = "variable",
+               values_to = "value")
 # Summarize all at once
-df_summary <- df_long1 %>%
+df_summary <- df_long %>%
   filter(variable %in% vars_selected) %>%
   group_by(variable, Sampling_event) %>%
   summarise(
@@ -631,8 +513,9 @@ df_summary <- df_long1 %>%
 
 # Set facet order (3 rows × 4 cols)
 df_summary$variable <- factor(df_summary$variable, levels = vars_selected)
+df_summary <- df_summary %>% dplyr::filter(Sampling_event != '11-23') %>% dplyr::filter(Sampling_event != '11-24')
 
-tiff("variable_barplots_avg_SE_facet.tif", width = 12, height = 10, units = "in", res = 300)
+tiff("plots/Current_day/variable_barplots_avg_SE_Quarterly.tif", width = 12, height = 10, units = "in", res = 300)
 
 p <- ggplot(df_summary, aes(x = Sampling_event, y = mean_value, fill = Sampling_event)) +
   geom_col(show.legend = TRUE, width = 0.7) +
@@ -649,7 +532,91 @@ p <- ggplot(df_summary, aes(x = Sampling_event, y = mean_value, fill = Sampling_
       "8-24" = "lightblue"
     )
   ) +
-  facet_wrap(~variable, nrow = 4, ncol = 3, scales = "free_y") +
+  facet_wrap(~variable, nrow = 3, ncol = 3, scales = "free_y") +
+  labs(
+    title = "Average values across Sampling Events",
+    x = "Sampling Event",
+    y = "Mean value",
+    fill = "Sampling Event"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    strip.text = element_text(face = "bold"),
+    plot.title = element_text(face = "bold", hjust = 0.5)
+  )
+
+print(p)
+dev.off()
+
+df_summary <- df_summary %>% dplyr::filter(Sampling_event %in% c('11-23', '11-24'))
+
+tiff("plots/Current_day/variable_barplots_avg_SE_EOI.tif", width = 12, height = 10, units = "in", res = 300)
+
+p <- ggplot(df_summary, aes(x = Sampling_event, y = mean_value, fill = Sampling_event)) +
+  geom_col(show.legend = TRUE, width = 0.7) +
+  geom_errorbar(
+    aes(ymin = mean_value - se, ymax = mean_value + se),
+    width = 0.2,
+    linewidth = 0.7
+  ) +
+  scale_fill_manual(
+    values = c(
+      "11-23" = "darkblue",
+      "11-24" = "lightblue"
+    )
+  ) +
+  facet_wrap(~variable, nrow = 2, ncol = 3, scales = "free_y") +
+  labs(
+    title = "Average values across Sampling Events",
+    x = "Sampling Event",
+    y = "Mean value",
+    fill = "Sampling Event"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    strip.text = element_text(face = "bold"),
+    plot.title = element_text(face = "bold", hjust = 0.5)
+  )
+
+print(p)
+dev.off()
+unique(df_long$variable)
+
+df_summary_1 <- df_summary %>% dplyr::filter(Sampling_event %in% c('11-23', '11-24'))
+df_summary_2 <- df_summary %>% dplyr::filter(Sampling_event != '11-23') %>% dplyr::filter(Sampling_event != '11-24') %>% 
+  group_by(variable) %>% summarize(mean_value = mean(mean_value), se = mean(se)) %>% mutate(Sampling_event = 'Quarterly')
+
+df_summary_1 <- df_summary_1 %>% dplyr::select(-n)
+
+df_summary_3 <- rbind(df_summary_1, df_summary_2)
+df_summary_3$Sampling_event <- as.character(df_summary_3$Sampling_event)
+str(df_summary_3)
+for(i in 1:nrow(df_summary_3)){
+  if(df_summary_3$Sampling_event[i] == '11-23'){
+    df_summary_3$Sampling_event[i] <- '11-23 EOI'
+  }else if(df_summary_3$Sampling_event[i] == '11-24'){
+    df_summary_3$Sampling_event[i] <- '11-24 EOI'
+  }
+}
+
+
+tiff("plots/Current_day/variable_barplots_avg_SE_EOI_Quarterly.tif", width = 12, height = 10, units = "in", res = 300)
+
+p <- ggplot(df_summary_3, aes(x = Sampling_event, y = mean_value, fill = Sampling_event)) +
+  geom_col(show.legend = TRUE, width = 0.7) +
+  geom_errorbar(
+    aes(ymin = mean_value - se, ymax = mean_value + se),
+    width = 0.2,
+    linewidth = 0.7
+  ) +
+  scale_fill_manual(
+    values = c(
+      "11-23 EOI" = "darkblue",
+      "11-24 EOI" = "lightblue",
+      'Quarterly' = 'darkred'
+    )
+  ) +
+  facet_wrap(~variable, nrow = 2, ncol = 3, scales = "free_y") +
   labs(
     title = "Average values across Sampling Events",
     x = "Sampling Event",
@@ -667,10 +634,18 @@ dev.off()
 unique(df_long$variable)
 
 #zoomed out map figure
+
 # Variables to map
-vars_to_map <- c("Temperature", "pH", "Turbidity", 
-                 "NO2", "NH4", "TOC", "TP", "TN", 
-                 "Salinity", "Chlorophyll", 'SRP', 'DO')
+names(df)
+df$SRP <- as.numeric(df$SRP)
+vars_to_map <- c("NO2", "NH4", "TOC", "TP", "TN", 
+                 'SRP')
+
+# Pivot to long format
+df_long <- df %>%
+  pivot_longer(cols = all_of(vars_to_map),
+               names_to = "variable",
+               values_to = "value")
 
 # --- Load shapefile (Florida shoreline) ---
 shoreline <- st_read("south_florida_detailed.shp") %>%
@@ -688,24 +663,20 @@ lat_pad <- diff(lat_range) * 0.15
 
 xlim <- c(lon_range[1] - lon_pad, lon_range[2] + lon_pad)
 ylim <- c(lat_range[1] - lat_pad, lat_range[2] + lat_pad)
+# Variables to map
+
 
 # Summarize all variables at once (just clean & filter)
-df_plot <- df_long1 %>%
-  filter(variable %in% vars_selected) %>%
+df_plot <- df_long %>%
+  filter(variable %in% vars_to_map) %>%
   filter(!is.na(Longitude), !is.na(Latitude), !is.na(value)) %>%
   mutate(in_extent = Longitude >= xlim[1] & Longitude <= xlim[2] &
            Latitude  >= ylim[1]  & Latitude  <= ylim[2]) %>%
   filter(in_extent)
 
-# Keep only events with >= 5 plottable points per variable
-df_plot <- df_plot %>%
-  group_by(variable, Sampling_event) %>%
-  mutate(n_vals = n()) %>%
-  ungroup() %>%
-  filter(n_vals >= 5)
 
 #Lock variable order for facets
-df_plot$variable <- factor(df_plot$variable, levels = vars_selected)
+df_plot$variable <- factor(df_plot$variable, levels = vars_to_map)
 
 # Lock event order
 event_levels <- c('9-23', '1-24', '4-24', '8-24')
@@ -716,7 +687,7 @@ df_plot$Sampling_event <- factor(df_plot$Sampling_event, levels = event_levels[e
 for (v in vars_to_map) {
   message("Processing variable: ", v)
   
-  df_var <- df_long1 %>%
+  df_var <- df_long %>%
     filter(variable == v,
            Sampling_event %in% event_levels,
            !is.na(Longitude), !is.na(Latitude), !is.na(value)) %>%
@@ -725,7 +696,7 @@ for (v in vars_to_map) {
   if (nrow(df_var) == 0) next
   
   # Open a new TIFF file for each variable
-  tiff(paste0("map_", v, "_zoomedout.tif"),
+  tiff(paste0("plots/Current_day/map_", v, "_zoomedout_2.tif"),
        width = 12, height = 10, units = "in", res = 300)
   
   p <- ggplot() +
@@ -767,7 +738,7 @@ ylim <- c(lat_range[1] + lat_pad*0.8, lat_range[2] - lat_pad*1.4)
 for (v in vars_to_map) {
   message("Processing variable: ", v)
   
-  df_var <- df_long1 %>%
+  df_var <- df_long %>%
     filter(variable == v,
            Sampling_event %in% event_levels,
            !is.na(Longitude), !is.na(Latitude), !is.na(value)) %>%
@@ -776,7 +747,7 @@ for (v in vars_to_map) {
   if (nrow(df_var) == 0) next
   
   # Open a new TIFF file for each variable
-  tiff(paste0("map_", v, "_zoomedin.tif"),
+  tiff(paste0("plots/Current_day/map_", v, "_zoomedin.tif"),
        width = 12, height = 10, units = "in", res = 300)
   
   p <- ggplot() +
@@ -803,12 +774,69 @@ for (v in vars_to_map) {
   dev.off()  # Close this TIFF before moving to the next variable
 }
 
+#Mapping EOI sampling
+# Summarize all variables at once (just clean & filter)
+df_plot <- df_long %>%
+  filter(variable %in% vars_to_map) %>%
+  filter(!is.na(Longitude), !is.na(Latitude), !is.na(value)) %>%
+  mutate(in_extent = Longitude >= xlim[1] & Longitude <= xlim[2] &
+           Latitude  >= ylim[1]  & Latitude  <= ylim[2]) %>%
+  filter(in_extent)
+
+
+#Lock variable order for facets
+df_plot$variable <- factor(df_plot$variable, levels = vars_to_map)
+
+# Lock event order
+event_levels <- c('11-23', '11-24')
+df_plot$Sampling_event <- factor(df_plot$Sampling_event, levels = event_levels[event_levels %in% unique(df_plot$Sampling_event)])
+
+# Save TIFF
+# Create TIFF
+for (v in vars_to_map) {
+  message("Processing variable: ", v)
+  
+  df_var <- df_long %>%
+    filter(variable == v,
+           Sampling_event %in% event_levels,
+           !is.na(Longitude), !is.na(Latitude), !is.na(value)) %>%
+    mutate(Sampling_event = factor(Sampling_event, levels = event_levels))
+  
+  if (nrow(df_var) == 0) next
+  
+  # Open a new TIFF file for each variable
+  tiff(paste0("plots/Current_day/map_", v, "_EOI.tif"),
+       width = 12, height = 10, units = "in", res = 300)
+  
+  p <- ggplot() +
+    geom_sf(data = shoreline, fill = "gray85", color = "black") +
+    geom_point(data = df_var,
+               aes(x = Longitude, y = Latitude, size = value, color = value),
+               alpha = 0.7) +
+    scale_size_continuous(range = c(1, 8)) +
+    scale_color_viridis_c(option = "plasma") +
+    coord_sf(xlim = xlim, ylim = ylim, expand = FALSE) +
+    facet_wrap(~Sampling_event, nrow = 2, ncol = 2, drop = TRUE) +
+    labs(
+      title = paste(v, "across Sampling Events"),
+      size = "Value", color = "Value"
+    ) +
+    theme_void(base_size = 12) +
+    theme(
+      legend.position = "right",
+      strip.text = element_text(face = "bold"),
+      plot.title = element_text(face = "bold", hjust = 0.5)
+    )
+  
+  print(p)
+  dev.off()  # Close this TIFF before moving to the next variable
+}
 
 #Mapping sediment stable isotopes
 sed <- read.csv('Data/Current_day/Sed_SIA.csv')
 sites <- read.csv('Data/Current_day/site_metadata.csv')
 df <- merge(sed, sites, by = 'Site_code')
-
+df_sum <- df %>% group_by(Site_code) %>% summarize(s = mean(S34), c = mean(C13), n = mean(N15))
 vars_to_map <- c('S34', 'N15', 'C13')
 
 df_long <- df %>%
@@ -866,7 +894,7 @@ for (v in vars_to_map) {
   if (nrow(df_var) == 0) next
   
   # Open a new TIFF file for each variable
-  tiff(paste0("map_", v, "_sed_SIA.tif"),
+  tiff(paste0("plots/Current_day/map_", v, "_sed_SIA.tif"),
        width = 12, height = 10, units = "in", res = 300)
   
   p <- ggplot() +
@@ -893,6 +921,105 @@ for (v in vars_to_map) {
   dev.off()  # Close this TIFF before moving to the next variable
 }
 
+
+#Mapping sediment nutrients
+sed <- read.csv('Data/Current_day/Soil/Sed_C_N.csv')
+sites <- read.csv('Data/Current_day/site_metadata.csv')
+df <- merge(sed, sites, by = 'Site_code')
+names(df)
+df <- df %>% rename('C_weight' = 'cw', 'N_weight' = 'nw', 'CN_ratio' = 'cnr')
+
+vars_to_map <- c('C_weight', 'N_weight', 'CN_ratio')
+
+df_long <- df %>%
+  pivot_longer(cols = all_of(vars_to_map),
+               names_to = "variable",
+               values_to = "value")
+#zoomed out map figure
+
+# --- Load shapefile (Florida shoreline) ---
+shoreline <- st_read("south_florida_detailed.shp") %>%
+  st_transform(crs = 4326)
+
+
+# plot(shoreline)
+
+# --- Compute bounding box of your data & zoom out a little ---
+lon_range <- range(df_long$Longitude, na.rm = TRUE)
+lat_range <- range(df_long$Latitude, na.rm = TRUE)
+
+lon_pad <- diff(lon_range) * 0.15  # more zoom-out padding
+lat_pad <- diff(lat_range) * 0.15
+
+xlim <- c(lon_range[1] - lon_pad, lon_range[2] + lon_pad)
+ylim <- c(lat_range[1] - lat_pad, lat_range[2] + lat_pad)
+
+# Summarize all variables at once (just clean & filter)
+df_plot <- df_long %>%
+  filter(variable %in% vars_to_map) %>%
+  filter(!is.na(Longitude), !is.na(Latitude), !is.na(value)) %>%
+  mutate(in_extent = Longitude >= xlim[1] & Longitude <= xlim[2] &
+           Latitude  >= ylim[1]  & Latitude  <= ylim[2]) %>%
+  filter(in_extent)
+
+
+#Lock variable order for facets
+df_plot$variable <- factor(df_plot$variable, levels = vars_to_map)
+
+# Lock event order
+str(df_plot)
+df_plot$Sampling_event <- as.character(df_plot$Sampling_event)
+for(i in 1:nrow(df_plot)){
+  if(df_plot$Sampling_event[i] == '45771'){
+    df_plot$Sampling_event[i] <-  '9-23'
+  }
+  else if(df_plot$Sampling_event[i] == '45923'){
+    df_plot$Sampling_event[i] <-  '4-24'
+  }
+}
+event_levels <- c('9-23', '4-24')
+df_plot$Sampling_event <- factor(df_plot$Sampling_event, levels = event_levels[event_levels %in% unique(df_plot$Sampling_event)])
+
+# Save TIFF
+# Create TIFF
+for (v in vars_to_map) {
+  message("Processing variable: ", v)
+  
+  df_var <- df_plot %>%
+    filter(variable == v,
+           Sampling_event %in% event_levels,
+           !is.na(Longitude), !is.na(Latitude), !is.na(value)) %>%
+    mutate(Sampling_event = factor(Sampling_event, levels = event_levels))
+  
+  if (nrow(df_var) == 0) next
+  
+  # Open a new TIFF file for each variable
+  tiff(paste0("plots/Current_day/map_", v, "_sed_nut.tif"),
+       width = 12, height = 10, units = "in", res = 300)
+  
+  p <- ggplot() +
+    geom_sf(data = shoreline, fill = "gray85", color = "black") +
+    geom_point(data = df_var,
+               aes(x = Longitude, y = Latitude, size = value, color = value),
+               alpha = 0.7) +
+    scale_size_continuous(range = c(1, 8)) +
+    scale_color_viridis_c(option = "plasma") +
+    coord_sf(xlim = xlim, ylim = ylim, expand = FALSE) +
+    facet_wrap(~Sampling_event, nrow = 2, ncol = 2, drop = TRUE) +
+    labs(
+      title = paste(v, "across Sampling Events"),
+      size = "Value", color = "Value"
+    ) +
+    theme_void(base_size = 12) +
+    theme(
+      legend.position = "right",
+      strip.text = element_text(face = "bold"),
+      plot.title = element_text(face = "bold", hjust = 0.5)
+    )
+  
+  print(p)
+  dev.off()  # Close this TIFF before moving to the next variable
+}
 #Mapping water stable isotopes
 wat <- read.csv('Data/Current_day/water_SIA.csv')
 df <- merge(wat, sites, by = 'Site_code')
@@ -954,7 +1081,7 @@ for (v in vars_to_map) {
   if (nrow(df_var) == 0) next
   
   # Open a new TIFF file for each variable
-  tiff(paste0("map_", v, "_water_SIA.tif"),
+  tiff(paste0("plots/Current_day/map_", v, "_water_SIA.tif"),
        width = 12, height = 10, units = "in", res = 300)
   
   p <- ggplot() +
@@ -999,7 +1126,7 @@ df$Sampling_event <- factor(df$Sampling_event, levels = event_levels[event_level
 
 str(df)
 
-tiff("Algal_ID.tif",
+tiff("plots/Current_day/Algal_ID.tif",
      width = 12, height = 10, units = "in", res = 300)
 
 p <- ggplot() +
@@ -1168,3 +1295,196 @@ p <- ggplot() +
 print(p)
 
 ggsave(filename = 'plots/map_BW3sites.png', height = 5, width = 5)
+
+#ANOVA across the quarterly samples
+# 1. Load the dataset
+# Replace "dftest.csv" with your actual file path
+head(df)
+
+# 2. Define the variables to test and the specific events to compare
+vars_to_test <- c("TN", "TOC", "TP", "SRP", "NH4", "NO2", "pH", "Turbidity", "DO")
+events_to_include <- c("9-23", "1-24", "4-24", "8-24")
+
+# 3. Filter data to include only the 4 quarterly events
+df_filtered <- df %>%
+  filter(Sampling_event %in% events_to_include)
+
+# 4. Loop through each variable and run ANOVA
+# We create a list to store the results
+anova_results <- list()
+
+for (var in vars_to_test) {
+  
+  # Construct the formula (e.g., TN ~ Sampling_event)
+  formula <- as.formula(paste(var, "~ Sampling_event"))
+  
+  # Run ANOVA
+  # We use tryCatch to handle cases where a variable might be all NA
+  fit <- tryCatch({
+    aov(formula, data = df_filtered)
+  }, error = function(e) NULL)
+  
+  if (!is.null(fit)) {
+    # Extract the summary
+    summ <- summary(fit)
+    
+    # Get F-value and P-value specifically
+    f_val <- summ[[1]][["F value"]][1]
+    p_val <- summ[[1]][["Pr(>F)"]][1]
+    
+    # Store in a readable format
+    anova_results[[var]] <- data.frame(
+      Variable = var,
+      F_Statistic = round(f_val, 3),
+      P_Value = format.pval(p_val, digits = 3, eps = 0.001),
+      Significant = ifelse(p_val < 0.05, "*", "")
+    )
+    
+    # Optional: Print summary to console as it runs
+    cat("\n--------------------------------------\n")
+    cat("ANOVA Results for:", var, "\n")
+    print(summ)
+    
+  } else {
+    cat("\nCould not run ANOVA for:", var, "(likely insufficient data)\n")
+  }
+}
+
+# 5. Combine summary results into a single table
+final_summary <- bind_rows(anova_results)
+
+print("Summary Table of ANOVA Results:")
+print(final_summary)
+
+# Optional: Run Tukey's HSD post-hoc test for significant variables
+# Example for TN:
+TukeyHSD(aov(TN ~ Sampling_event, data = df_filtered))
+
+library(multcompView) # Install if needed: install.packages("multcompView")
+
+# 1. PREPARE DATA -----------------------------------------------------------
+vars_selected <- c("Turbidity", 'pH', 'DO', 
+                   "TOC", "TP", "TN", 
+                   "NO2", "NH4", "SRP")
+
+# Filter raw data FIRST so stats run on the correct groups
+df_raw_filtered <- df %>%
+  dplyr::filter(!Sampling_event %in% c('11-23', '11-24')) %>%
+  dplyr::filter(variable %in% vars_selected) # Ensure we only keep needed vars if not already pivoted
+# If df is wide, pivot first or filter after pivot. 
+# Assuming df is wide based on your pivot_longer code:
+
+df_long <- df %>%
+  pivot_longer(cols = all_of(vars_selected), names_to = "variable", values_to = "value") %>%
+  dplyr::filter(!Sampling_event %in% c('11-23', '11-24')) %>% 
+  dplyr::filter(!is.na(value)) # Remove NAs for stats
+
+# 2. CALCULATE SUMMARY & TUKEY LETTERS --------------------------------------
+
+# A. Create Summary
+df_summary <- df_long %>%
+  group_by(variable, Sampling_event) %>%
+  summarise(
+    mean_value = mean(value, na.rm = TRUE),
+    n = n(),
+    se = sd(value, na.rm = TRUE) / sqrt(n),
+    max_y = mean_value + se, # Helper for label position
+    .groups = "drop"
+  ) %>%
+  filter(n > 0)
+
+# B. Loop to calculate Tukey Letters for each variable
+# B. Loop to calculate Tukey Letters
+tukey_results <- data.frame()
+
+for(var in vars_selected) {
+  # Subset data for this variable
+  sub_dat <- df_long %>% filter(variable == var)
+  
+  # Skip if not enough data
+  if(nrow(sub_dat) < 3) next 
+  
+  # --- FIX FOR HYPHEN ERROR ---
+  # Create a "Safe" column where we replace '-' with '_'
+  sub_dat$Sampling_event_safe <- factor(gsub("-", "_", sub_dat$Sampling_event))
+  
+  # 1. Run ANOVA on the SAFE column
+  aov_mod <- aov(value ~ Sampling_event_safe, data = sub_dat)
+  
+  # 2. Run Tukey
+  tukey_test <- TukeyHSD(aov_mod)
+  
+  # 3. Get compact letters
+  # The function will now see names like "1_24-9_23", which has only one '-'
+  cld <- multcompView::multcompLetters4(aov_mod, tukey_test)
+  
+  # Extract letters using the SAFE column name
+  letters_vec <- cld$Sampling_event_safe$Letters
+  
+  # Create temp dataframe
+  temp_df <- data.frame(
+    variable = var,
+    Sampling_event_safe = names(letters_vec),
+    tukey_letter = letters_vec
+  )
+  
+  # --- CONVERT BACK TO ORIGINAL NAMES ---
+  # Replace '_' back with '-' so we can join with the summary table
+  temp_df$Sampling_event <- gsub("_", "-", temp_df$Sampling_event_safe)
+  
+  tukey_results <- rbind(tukey_results, temp_df)
+}
+
+# C. Merge letters into summary
+# We join on the original 'Sampling_event' column
+df_summary <- df_summary %>%
+  left_join(tukey_results, by = c("variable", "Sampling_event"))
+
+# Set factor levels for plotting order
+df_summary$variable <- factor(df_summary$variable, levels = vars_selected)
+
+df_summary$Sampling_event <- factor(df_summary$Sampling_event, levels = c('9-23', '1-24', '4-24', '8-24'))
+
+# 3. PLOT -------------------------------------------------------------------
+
+tiff("plots/Current_day/variable_barplots_avg_SE_Quarterly.tif", width = 12, height = 10, units = "in", res = 300)
+
+p <- ggplot(df_summary, aes(x = Sampling_event, y = mean_value, fill = Sampling_event)) +
+  geom_col(show.legend = TRUE, width = 0.7) +
+  geom_errorbar(
+    aes(ymin = mean_value - se, ymax = mean_value + se),
+    width = 0.2,
+    linewidth = 0.7
+  ) +
+  geom_text(
+    aes(label = tukey_letter, y = mean_value + se),
+    vjust = -0.5, 
+    size = 4,
+    fontface = "bold"
+  ) +
+  scale_fill_manual(
+    values = c(
+      "9-23" = "darkblue",
+      "1-24" = "pink",
+      "4-24" = "darkred",
+      "8-24" = "lightblue"
+    )
+  ) +
+  facet_wrap(~variable, nrow = 3, ncol = 3, scales = "free_y") +
+  labs(
+    title = "Average values across Sampling Events",
+    subtitle = "Letters indicate significant differences (Tukey HSD, p < 0.05)",
+    x = "Sampling Event",
+    y = "Mean value",
+    fill = "Sampling Event"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    strip.text = element_text(face = "bold"),
+    plot.title = element_text(face = "bold", hjust = 0.5),
+    plot.margin = margin(10, 10, 10, 10) 
+  ) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.15)))
+
+print(p)
+dev.off()
