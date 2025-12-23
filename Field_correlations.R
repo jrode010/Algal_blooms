@@ -924,12 +924,13 @@ for (v in vars_to_map) {
 
 #Mapping sediment nutrients
 sed <- read.csv('Data/Current_day/Soil/Sed_C_N.csv')
+sed_p <- read.csv('Data/Current_day/Soil/Sed_P.csv')
 sites <- read.csv('Data/Current_day/site_metadata.csv')
-df <- merge(sed, sites, by = 'Site_code')
+df <- merge(sed_p, sites, by = 'Site_code')
 names(df)
 df <- df %>% rename('C_weight' = 'cw', 'N_weight' = 'nw', 'CN_ratio' = 'cnr')
-
-vars_to_map <- c('C_weight', 'N_weight', 'CN_ratio')
+df <- df %>% rename('P_weight' = TP)
+vars_to_map <- c('P_weight')
 
 df_long <- df %>%
   pivot_longer(cols = all_of(vars_to_map),
@@ -968,12 +969,13 @@ df_plot$variable <- factor(df_plot$variable, levels = vars_to_map)
 
 # Lock event order
 str(df_plot)
-df_plot$Sampling_event <- as.character(df_plot$Sampling_event)
+df_plot$X <- as.character(df_plot$X)
+df_plot <- df_plot %>% rename('Sampling_event' = X)
 for(i in 1:nrow(df_plot)){
-  if(df_plot$Sampling_event[i] == '45771'){
+  if(df_plot$Sampling_event[i] == '923S2'){
     df_plot$Sampling_event[i] <-  '9-23'
   }
-  else if(df_plot$Sampling_event[i] == '45923'){
+  else if(df_plot$Sampling_event[i] == '424S2'){
     df_plot$Sampling_event[i] <-  '4-24'
   }
 }
