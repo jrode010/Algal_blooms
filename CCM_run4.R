@@ -561,12 +561,12 @@ plot( x = ccm$LibMeans$LibSize,
   graphlag <- function(x){
   x1 <- x %>% slice(2:n())
   
-  ggplot(x1, aes(x = lag, y = pred)) +
+  ggplot(x1, aes(x = laglead, y = pred)) +
     geom_point(color = "blue", size = 2) +  # Points for pred
     geom_errorbar(aes(ymin = pred - sdpred, ymax = pred + sdpred), width = 0.2, color = "darkgray") +  # SD bars
     geom_line(color = "black", linewidth = 1) +  # Connecting curve
     geom_hline(aes(yintercept = 0))+
-    scale_x_continuous(breaks = seq(min(gTPgchl$lag), max(gTPgchl$lag), by = 2))+
+    scale_x_continuous(breaks = seq(-12, 2, by = 2))+
     labs(
       x = "Lag (1 month)",
       y = "Prediction skill"
@@ -576,7 +576,7 @@ plot( x = ccm$LibMeans$LibSize,
     )+
     theme_classic()}
   
-  graphlag(speedarea)
+  graphlag(gturbrchl)
   
   ggsave(filename = "E:/FIU/PostDoc/FB_sediment_algal_blooms/Project/Data/Figures_EDM/area_speed_lag.png")
   
@@ -739,6 +739,7 @@ rhorchleturb <- rho_lagleadfun_parallel(dat, 'eturb', 'rchl', 3,3,2,100,12)
 rhorchleTN <- rho_lagleadfun_parallel(dat, 'eTN', 'rchl', 3,3,2,100,12)
 rhorchldcbr <- rho_lagleadfun_parallel(dat, 'dcbr', 'rchl', 3,3,2,100,12)
 rhorchldcbre <- rho_lagleadfun_parallel(dat, 'dcbre', 'rchl', 3,3,2,100,12)
+rhorchlgturb <- rho_lagleadfun_parallel(dat, 'gturb', 'rchl', 3,3,2,100,12)
 #gchl
 rhogchlaflow <- rho_lagleadfun_parallel(dat, 'aflow', 'gchl', 4,3,4,100,12)
 rhogchlarea <- rho_lagleadfun_parallel(dat, 'mean_area', 'gchl', 4,3,4,100,12)
@@ -949,9 +950,10 @@ gdcbrearea <- graphlag(dcbrearea, rhoareadcbre)
 gdcbrearea
 gdcbrerchl <- graphlag(dcbrerchl, rhorchldcbre)
 gdcbrerchl
-gcDOjchl <- graphlag(cDOjchl, rhojchlcDO)
-gcDOjchl
+ggturbrchl <- graphlag(gturbrchl, rhorchlgturb)
+ggturbrchl
 
+ggsave(filename = 'plots/gturbrchl_lag.png', plot = ggturbrchl)
 ggsave(filename = 'plots/gtocarea_lag.png', plot = ggtocarea)
 ggsave(filename = 'plots/mcdocarea_lag.png', plot = gmcdocarea)
 ggsave(filename = 'plots/mmaxstagearea_lag.png', plot = gmmaxstagearea)
