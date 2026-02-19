@@ -377,7 +377,7 @@ for (resp in responses) {
 }
 
 
-df <- wq4 %>%
+df <- wq3 %>%
   rename(
     NO2 = NO2.N_um.L,
     NH4 = NH3.NH4.N_um.L,
@@ -638,11 +638,11 @@ unique(df_long$variable)
 # Variables to map
 names(df)
 df$SRP <- as.numeric(df$SRP)
-vars_to_map <- c("NO2", "NH4", "TOC", "TP", "TN", 
-                 'SRP')
+df_4 <- df %>% dplyr::filter(Sampling_event == '4-24')
+vars_to_map <- c("TOC", "TP", "TN")
 
 # Pivot to long format
-df_long <- df %>%
+df_long <- df_4 %>%
   pivot_longer(cols = all_of(vars_to_map),
                names_to = "variable",
                values_to = "value")
@@ -661,10 +661,14 @@ lat_range <- range(df_long$Latitude, na.rm = TRUE)
 lon_pad <- diff(lon_range) * 0.15  # more zoom-out padding
 lat_pad <- diff(lat_range) * 0.15
 
-xlim <- c(lon_range[1] - lon_pad, lon_range[2] + lon_pad)
-ylim <- c(lat_range[1] - lat_pad, lat_range[2] + lat_pad)
+xlim <- c(lon_range[1] + lon_pad*2, lon_range[2] + lon_pad)
+ylim <- c(lat_range[1] + lat_pad*2, lat_range[2] + lat_pad)
 # Variables to map
+lon_pad <- diff(lon_range) * 0.3  # more zoom-out padding
+lat_pad <- diff(lat_range) * 0.3
 
+xlim <- c(lon_range[1] + lon_pad*1.3, lon_range[2] - lon_pad*0.66)
+ylim <- c(lat_range[1] + lat_pad*0.8, lat_range[2] - lat_pad*1.4)
 
 # Summarize all variables at once (just clean & filter)
 df_plot <- df_long %>%
@@ -679,7 +683,7 @@ df_plot <- df_long %>%
 df_plot$variable <- factor(df_plot$variable, levels = vars_to_map)
 
 # Lock event order
-event_levels <- c('9-23', '1-24', '4-24', '8-24')
+event_levels <- c('4-24')
 df_plot$Sampling_event <- factor(df_plot$Sampling_event, levels = event_levels[event_levels %in% unique(df_plot$Sampling_event)])
 
 # Save TIFF
@@ -696,8 +700,8 @@ for (v in vars_to_map) {
   if (nrow(df_var) == 0) next
   
   # Open a new TIFF file for each variable
-  tiff(paste0("plots/Current_day/map_", v, "_zoomedout_2.tif"),
-       width = 12, height = 10, units = "in", res = 300)
+  tiff(paste0("plots/Current_day/map_", v, "_zoomedin_4-24.tif"),
+       width = 8, height = 6, units = "in", res = 200)
   
   p <- ggplot() +
     geom_sf(data = shoreline, fill = "gray85", color = "black") +
@@ -709,7 +713,7 @@ for (v in vars_to_map) {
     coord_sf(xlim = xlim, ylim = ylim, expand = FALSE) +
     facet_wrap(~Sampling_event, nrow = 2, ncol = 2, drop = TRUE) +
     labs(
-      title = paste(v, "across Sampling Events"),
+      title = paste(v, "April 2024"),
       size = "Value", color = "Value"
     ) +
     theme_void(base_size = 12) +
