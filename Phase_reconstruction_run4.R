@@ -15,8 +15,10 @@ dat2 <- read.csv('SSA_jg.csv')
 dat <- cbind(dat, dat2)
 write.csv(dat, file = 'SSA_run4_wcumflowccgnh4ecdcjg.csv') 
 
+dat <- read.csv('SSA_chlgrabwbwind.csv')
+dat <- read.csv('SSA_loads.csv')
 colnames( dat )
-  var <- 'gPH'
+  var <- 'etemp'
   x <- dat[,var] |> na.omit()
   x <- scale( x )
 

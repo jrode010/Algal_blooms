@@ -17,6 +17,8 @@ datec <- read.csv('SSA_ec.csv')
 datdc <- read.csv('SSA_dc_sentinel.csv')
 datjg <- read.csv('SSA_jg.csv')
 datchpstage <- read.csv('SSA_chpstage.csv')
+datgrabwind <- read.csv('SSA_chlgrabwbwind.csv')
+datloads <- read.csv('SSA_loads.csv')
 colnames( dat )
 
 datsat <- datsat %>% dplyr::select(-date)
@@ -32,15 +34,17 @@ dat <- cbind(dat, datec)
 dat <- cbind(dat, datdc)
 dat <- cbind(dat, datjg)
 dat <- cbind(dat, datchpstage)
+dat <- cbind(dat, datgrabwind)
+dat <- cbind(dat, datloads)
 names(dat)
-
+dat <- dat %>% dplyr::select(-X)
 ggplot(dat)+
-  geom_line(aes(x = ymd(date), y = gTP))+
+  geom_line(aes(x = ymd(date), y = gtnload))+
   theme_classic()
 
 # Select variables for CCM test
-y <- "rchl"  # effect
-x <- "chp_stage"  # cause
+y <- "gargrabchl"  # effect
+x <- "aflow"  # cause
 df1 <- dat[,c("date",x,y)] |> na.omit()
 df1$date <- df1$date |> ymd() # format dates
 df1[,c(2,3)] <- apply( df1[,c(2,3)], 2, scale )  # scale signals to mean=0, sd=1
@@ -48,9 +52,9 @@ dim( df1 )
 
 # Run CCM and plot results
 ccm <- CCM( dataFrame = df1,
-            E = 3,   # embedding dimension
-            tau = -3,   # embedding delay
-            exclusionRadius = 2,   # Theiler window
+            E = 2,   # embedding dimension
+            tau = -1,   # embedding delay
+            exclusionRadius = 3,   # Theiler window
             target = x,   # prediction target (cause)
             columns = y,   # library (effect) 
             libSizes = "6 84 6",  # string for sequence 'from, to, by'
@@ -312,6 +316,8 @@ plot( x = ccm$LibMeans$LibSize,
   jTNarea <- loopccmlaglead(dat, 'jTN', 'mean_area', 12,3,4,5)
   jpHarea <- loopccmlaglead(dat, 'jpH', 'mean_area', 12,3,4,5)
   jchlarea <- loopccmlaglead(dat, 'jchl', 'mean_area', 12,3,4,5)
+  wbwinddirarea <- loopccmlaglead(dat, 'wbwinddir', 'mean_area', 12,3,4,5)
+  wbwindspeedarea <- loopccmlaglead(dat, 'wbwindspeed', 'mean_area', 12,3,4,5)
   
   
 #Northing. e = 3, t = 2, er = 4
@@ -337,6 +343,9 @@ plot( x = ccm$LibMeans$LibSize,
   gTOCnorthing <- loopccmlaglead(dat, 'gTOC', 'northing', 12,3,2,4)
   rsalnorthing <- loopccmlaglead(dat, 'rsal', 'northing', 12,3,2,4)
   rTOCnorthing <- loopccmlaglead(dat, 'rTOC', 'northing', 12,3,2,4)
+  wbwinddirnorthing <- loopccmlaglead(dat, 'wbwinddir', 'northing', 12,3,2,4)
+  wbwindspeednorthing <- loopccmlaglead(dat, 'wbwindspeed', 'northing', 12,3,2,4)
+  
 
   #Loops for rchl: e = 3, t = 3, er = 2
   actprchl <- loopccmlaglead(dat, 'actp', 'rchl', 12,3,3,2)
@@ -399,6 +408,9 @@ plot( x = ccm$LibMeans$LibSize,
   jTNrchl <- loopccmlaglead(dat, 'jTN', 'rchl', 12,3,3,2)
   jpHrchl <- loopccmlaglead(dat, 'jpH', 'rchl', 12,3,3,2)
   jchlrchl <- loopccmlaglead(dat, 'jchl', 'rchl', 12,3,3,2)
+  gtnloadrchl <- loopccmlaglead(dat, 'gtnload', 'rchl', 12,3,3,2)
+  gtploadrchl <- loopccmlaglead(dat, 'gtpload', 'rchl', 12,3,3,2)
+  gdocloadrchl <- loopccmlaglead(dat, 'gdocload', 'rchl', 12,3,3,2)
  
   #Loops for gchl: e = 4, t = 3, er = 4
   actpgchl <- loopccmlaglead(dat, 'actp', 'gchl', 12,4,3,4)
@@ -537,6 +549,38 @@ plot( x = ccm$LibMeans$LibSize,
   dcbregTP <- loopccmlaglead_gtp(dat, 'dcbre', 'gTP', 12,5,10,5)
   gnh4gTP <- loopccmlaglead_gtp(dat, 'gNH4', 'gTP', 12,5,10,5)
   gchlgTP <- loopccmlaglead_gtp(dat, 'gchl', 'gTP', 12,5,10,5)
+  
+  #Loops for gargrab: e = 2, t = 1, er = 3
+  actpgargrabchl <- loopccmlaglead(dat, 'actp', 'gargrabchl', 12,2,1,3)
+  aflowgargrabchl <- loopccmlaglead(dat, 'aflow', 'gargrabchl', 12,2,1,3)
+  acdocgargrabchl <- loopccmlaglead(dat, 'acdoc', 'gargrabchl', 12,2,1,3)
+  amaxstagegargrabchl <- loopccmlaglead(dat, 'amaxstage', 'gargrabchl', 12,2,1,3)
+  rTNgargrabchl <- loopccmlaglead(dat, 'rTN', 'gargrabchl', 12,2,1,3)
+  marshmeanraingargrabchl <- loopccmlaglead(dat, 'marshmeanrain', 'gargrabchl', 12,2,1,3)
+  gsmeanstagegargrabchl <- loopccmlaglead(dat, 'gsmeanstage', 'gargrabchl', 12,2,1,3)
+  actngargrabchl<- loopccmlaglead(dat, 'actn', 'gargrabchl', 12,2,1,3)
+  gTPgargrabchl <- loopccmlaglead(dat, 'gTP', 'gargrabchl', 12,2,1,3)
+  gTNgargrabchl <- loopccmlaglead(dat, 'gTN', 'gargrabchl', 12,2,1,3)
+  rTPgargrabchl <- loopccmlaglead(dat, 'rTP', 'gargrabchl', 12,2,1,3)
+  rchlgargrabchl <- loopccmlaglead(dat, 'rchl', 'gargrabchl', 12,2,1,3)
+  gchlgargrabchl <- loopccmlaglead(dat, 'gchl', 'gargrabchl', 12,2,1,3)
+  gsalgargrabchl <- loopccmlaglead(dat, 'gsal', 'gargrabchl', 12,2,1,3)
+  rsalgargrabchl <- loopccmlaglead(dat, 'rsal', 'gargrabchl', 12,2,1,3)
+  gTOCgargrabchl <- loopccmlaglead(dat, 'gTOC', 'gargrabchl', 12,2,1,3)
+  rTOCgargrabchl <- loopccmlaglead(dat, 'rTOC', 'gargrabchl', 12,2,1,3)
+  rpHgargrabchl <- loopccmlaglead(dat, 'rpH', 'gargrabchl', 12,2,1,3)
+  gpHgargrabchl <- loopccmlaglead(dat, 'gpH', 'gargrabchl', 12,2,1,3)
+  gsrainfallgargrabchl <- loopccmlaglead(dat, 'gsrainfall', 'gargrabchl', 12,2,1,3)
+  acnh4gargrabchl <- loopccmlaglead(dat, 'acnh4', 'gargrabchl', 12,2,1,3)
+  gnh4gargrabchl <- loopccmlaglead(dat, 'gNH4', 'gargrabchl', 12,2,1,3)
+  dcbrgargrabchl <- loopccmlaglead(dat, 'dcbr', 'gargrabchl', 12,2,1,3)
+  dcbregargrabchl <- loopccmlaglead(dat, 'dcbre', 'gargrabchl', 12,2,1,3)
+  wbwinddirgargrabchl <- loopccmlaglead(dat, 'wbwinddir', 'gargrabchl', 12,2,1,3)
+  wbwindspeedgargrabchl <- loopccmlaglead(dat, 'wbwindspeed', 'gargrabchl', 12,2,1,3)
+  gtnloadgargrabchl <- loopccmlaglead(dat, 'gtnload', 'gargrabchl', 12,2,1,3)
+  gtploadgargrabchl <- loopccmlaglead(dat, 'gtpload', 'gargrabchl', 12,2,1,3)
+  gdocloadgargrabchl <- loopccmlaglead(dat, 'gdocload', 'gargrabchl', 12,2,1,3)
+
 
   
   graphlag <- function(x){
@@ -787,6 +831,15 @@ rhogpHamaxstage <- rho_lagleadfun_parallel(dat, 'amaxstage', 'gpH', 4,3,4,100,12
 rhogpHaflowcum <- rho_lagleadfun_parallel(dat, 'aflow_cum', 'gpH', 4,3,4,100,12)
 rhogpHgnh4 <- rho_lagleadfun_parallel(dat, 'gNH4', 'gpH', 4,3,4,100,12)
 
+#gargrab
+rhogargrabaflow <- rho_lagleadfun_parallel(dat, 'aflow', 'gargrabchl', 2,1,3,100,12)
+rhogargrabamaxstage <- rho_lagleadfun_parallel(dat, 'amaxstage', 'gargrabchl', 2,1,3,100,12)
+rhogargrabgsrainfall <- rho_lagleadfun_parallel(dat, 'gsrainfall', 'gargrabchl', 2,1,3,100,12)
+rhogargrabmarshmeanrain <- rho_lagleadfun_parallel(dat, 'marshmeanrain', 'gargrabchl', 2,1,3,100,12)
+rhogargrabrTOC <- rho_lagleadfun_parallel(dat, 'rTOC', 'gargrabchl', 2,1,3,100,12)
+rhogargrabrsal <- rho_lagleadfun_parallel(dat, 'rsal', 'gargrabchl', 2,1,3,100,12)
+rhogargrabgtpload <- rho_lagleadfun_parallel(dat, 'gtpload', 'gargrabchl', 2,1,3,100,12)
+rhogargrabgdocload <- rho_lagleadfun_parallel(dat, 'gdocload', 'gargrabchl', 2,1,3,100,12)
 
 
 future::plan(sequential)
@@ -932,6 +985,20 @@ gdcbrerchl <- graphlag(dcbrerchl, rhorchldcbre)
 gdcbrerchl
 gcDOjchl <- graphlag(cDOjchl, rhojchlcDO)
 gcDOjchl
+gaflowgargrab <- graphlag(aflowgargrabchl, rhogargrabaflow)
+gaflowgargrab
+gamaxstagegargrab <- graphlag(amaxstagegargrabchl, rhogargrabamaxstage)
+gamaxstagegargrab
+ggsrainfallgargrab <- graphlag(gsrainfallgargrabchl, rhogargrabgsrainfall)
+ggsrainfallgargrab
+grTOCgargrab <- graphlag(rTOCgargrabchl, rhogargrabrTOC)
+grTOCgargrab
+grsalgargrab <- graphlag(rsalgargrabchl, rhogargrabrsal)
+grsalgargrab
+ggtploadgargrab <- graphlag(gtploadgargrabchl, rhogargrabgtpload)
+ggtploadgargrab
+ggdocloadgargrab <- graphlag(gdocloadgargrabchl, rhogargrabgdocload)
+ggdocloadgargrab
 
 ggsave(filename = 'plots/gtocarea_lag.png', plot = ggtocarea)
 ggsave(filename = 'plots/mcdocarea_lag.png', plot = gmcdocarea)
@@ -971,6 +1038,11 @@ ggsave(filename = 'plots/rchleturb_lag.png', plot = geturbrchl)
 ggsave(filename = 'plots/rchletn_lag.png', plot = getnrchl)
 ggsave(filename = 'plots/rchldcbre_lag.png', plot = gdcbrerchl)
 ggsave(filename = 'plots/areadcbre_lag.png', plot = gdcbrearea)
+ggsave(filename = 'plots/gargrabaflow_lag.png', plot = gaflowgargrab)
+ggsave(filename = 'plots/gargrabamaxstage_lag.png', plot = gamaxstagegargrab)
+ggsave(filename = 'plots/gargrabrtoc_lag.png', plot = grTOCgargrab)
+ggsave(filename = 'plots/gargrabgtpload_lag.png', plot = ggtploadgargrab)
+ggsave(filename = 'plots/gargrabgdocload_lag.png', plot = ggdocloadgargrab)
 
 ##CCM graphs at the max lag for significant variables
 #function to graph
@@ -1163,19 +1235,25 @@ glagjsaljchl <- graphccmlag(dat, 'jsal', 'jchl', 2, 3, 4, 4)
 lagactpgph <- graphccmlag(dat, 'actp', 'gpH', 1, 4, 3, 4)
 laggnh4gph <- graphccmlag(dat, 'gNH4', 'gpH', 4, 4, 3, 4)
 
-str(dat)
+#gargrab - e = 2, t = 1, er = 3
+lagaflowgargrab <- graphccmlag(dat, 'aflow', 'gargrabchl', 1, 2, 1, 3)
+lagaflowgargrab
+lagamaxstagegargrab <- graphccmlag(dat, 'amaxstage', 'gargrabchl', 3, 2, 1, 3)
+lagrTOCgargrab <- graphccmlag(dat, 'rTOC', 'gargrabchl', 7, 2, 1, 3)
+laggtploadgargrab <- graphccmlag(dat, 'gtpload', 'gargrabchl', 1, 2, 1, 3)
+laggdocloadgargrab <- graphccmlag(dat, 'gdocload', 'gargrabchl', 1, 2, 1, 3)
 
 #S-mapping to look at relationships
 #rchl and lag of dcbre
 
 df2 <- dat %>%
-  dplyr::select(date, jchl, jsal) %>% 
-  mutate(ll = lag(jsal, 2)) %>%
-  dplyr::select(date, jchl, ll) %>%
+  dplyr::select(date, gargrabchl, aflow) %>% 
+  mutate(ll = lag(aflow, 1)) %>%
+  dplyr::select(date, gargrabchl, ll) %>%
   drop_na()
 
 libsize_str <- paste("6", nrow(df2)-12, "6")
-smap_rchldcbre <- SMap(dataFrame = df2,
+smap_gargrabaflow <- SMap(dataFrame = df2,
            E = 3, # embedding dimension
            tau = -4, # embedding delay
            exclusionRadius = 4,  # Theiler window
@@ -1183,18 +1261,18 @@ smap_rchldcbre <- SMap(dataFrame = df2,
            lib = '1 60',
            pred = '61 88',
            embedded = T,
-           columns = 'll jchl')
-smap_rchldcbre$predictions
-smap_rchldcbre$coefficients
+           columns = 'll gargrabchl')
+smap_gargrabaflow$predictions
+smap_gargrabaflow$coefficients
 ?SMap
 ?CCM
 
 names(dat)
 head(dat)
-dat <- dat %>% mutate(date = ymd(date))
+dat <- dat %>% dplyr::select(-X) %>% mutate(date = ymd(date))
 ggplot(dat)+
-  geom_line(aes(x = date, y = lag(jsal,2)))+
-  geom_line(aes(x = date, y = jchl), color = 'green', inherit.aes = F)+
+  geom_line(aes(x = date, y = lag(aflow,1)))+
+  geom_line(aes(x = date, y = gargrabchl), color = 'green', inherit.aes = F)+
   theme_classic()
 
 cor.test(x = dat$jturb, y = dat$jchl)

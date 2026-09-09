@@ -769,3 +769,62 @@ ggplot(jgdat1)+
 ggplot(ggdat1)+
   geom_line(aes(x = date, y = gTP))+
   theme_classic()
+
+##Adding chl grab samples and wind from whipray to coastal month data
+dat <- read.csv('coastal_data_month.csv')
+
+garchl <- read.csv('Data/Garfield_chl_grab.csv')
+terchl <- read.csv('Data/Terrapin_chl_grab.csv')
+wbwind <- read.csv('Data/WB_wind_data.csv')
+
+str(garchl)
+str(wbwind)
+
+wbwind$dir <- as.numeric(wbwind$dir)
+wbwind$speed <- as.numeric(wbwind$speed)
+
+mon_fun1 <- fuas.numeric()mon_fun1 <- function(x, y, w, z){ #for data only needed to be grouped once, x = dataset, y = date column, w is column for the mean, z = quoted name for new mean column
+  b <- x %>% mutate(date = mdy({{y}})) %>% mutate(date = as.Date(format(date, '%Y-%m-01')))%>% group_by(date) %>% summarize(mean = mean({{w}}, na.rm = T)) %>% dplyr::rename(!!z := mean)
+  return(b)
+}
+
+garchl1 = mon_fun1(x = garchl, y = Date, w = Average, z = 'gargrabchl') %>% mutate(gargrabchl = if_else(gargrabchl < 0, NA, gargrabchl))
+terchl1 = mon_fun1(x = terchl, y = Date, w = Average, z = 'tergrabchl') %>% mutate(tergrabchl = if_else(tergrabchl < 0, NA, tergrabchl))
+wbwinddir <- mon_fun1(x = wbwind, y = date, w = dir, z = 'wbwinddir')
+wbwindspeed <- mon_fun1(x = wbwind, y = date, w = speed, z = 'wbwindspeed')
+
+str(garchl1)
+str(dat)
+dat$date <- as.Date(dat$date)
+cdm <- dat %>% left_join(garchl1, by = 'date') %>% left_join(terchl1, by = 'date') %>% left_join(wbwinddir, by = 'date') %>% left_join(wbwindspeed, by = 'date')
+cdm <- cdm %>% mutate(gargrabchl = if_else(gargrabchl > 100, 56.48, gargrabchl))
+
+write.csv(file = 'coastal_data_month2.csv', cdm)
+
+head(garchl1)
+
+garchl1 <- garchl1 %>% mutate(gargrabchl = if_else(gargrabchl > 100, 56.48, gargrabchl)) %>% mutate(gargrabchl = na.approx(gargrabchl))
+gc <- cdm %>% dplyr::select(c(date, gargrabchl)) %>% dplyr::filter(date >= as.Date('2010-05-01')) %>% mutate(gargrabchl = na.approx(gargrabchl))
+
+ggplot()+
+  #scale_x_continuous(breaks=seq(1,12,1), limits = c(1,12))+
+  #scale_y_continuous(breaks=seq(5,55,10), limits = c(5,55))+
+  theme_classic()+
+  #geom_smooth(data = CN.sal3, aes(month, mean_sal, color = year, linetype = Line), 
+  #method = "loess", se = FALSE, fullrange = TRUE, size = 1)+
+  geom_line(data = gc, aes(date, gargrabchl),
+            linewidth = 0.5, color = 'darkgreen')+
+  # geom_ribbon(data = df_c2010, aes(x= date, ymin = (chl - (1.96*sd)),
+  #                                  ymax = (chl + (1.96*sd)), fill="grey85", alpha = 0.6))+
+  scale_y_continuous(breaks=seq(0,60,5), limits = c(0,60))+
+  scale_x_date(breaks = seq(as.Date("2010-05-01"),
+                            as.Date("2024-12-31"), by = "1 year"),date_labels = "%Y")+
+  labs(title = "Chlorophyll Garfield", x = "Year", y = "Chlorophyll")+
+  theme(axis.text = element_text(size = 10, color = "black", face = "bold"),
+        legend.text = element_text(size = 10, color = "black", face = "bold"),
+        axis.title = element_text(size = 16, face = "bold"), 
+        plot.title = element_text(size = 16, face = "bold", hjust = 0.5))
+
+ggsave(filename = 'plots/garfield_grab_samples.png', width = 8, height = 4)
+
+head(cdm)

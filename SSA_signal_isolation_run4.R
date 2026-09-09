@@ -8,86 +8,26 @@ library(zoo)
 library(tidyverse)
 
 #### Load data#####
-  dat2 <- read.csv(file = 'coastal_data_month.csv')
+  dat2 <- read.csv(file = 'coastal_data_month2.csv')
   
-  dat <- dat2 %>% dplyr::select(-c(oflow, omaxstage, omeanstage, ominstage, wflow, wmeanstage, gNN, gNO3, gNO2, gAP, gOP, rNN, rNO3, rNO2, rAP, rOP, gchlb, rchlb))
-
-  str(dat)
   
   dat2 <- dat2 %>% dplyr::filter(date > ymd('2016-01-01'))
   dat2 <- dat2 %>% dplyr::filter(date < ymd('2024-04-01'))
-  ccdat <- ccdat %>%  dplyr::filter(date > ymd('2016-01-01'))
-  ccdat <- ccdat %>% dplyr::filter(date < ymd('2024-04-01'))
-  ecdat <- ecdat %>%  dplyr::filter(date > ymd('2016-01-01'))
-  ecdat <- ecdat %>% dplyr::filter(date < ymd('2024-04-01'))
-  dcdat <- sd_mon %>% dplyr::filter(date < ymd('2024-04-01'))
-  jgdat <- jgdat %>% dplyr::filter(date > ymd('2016-01-01'))
-  jgdat <- jgdat %>% dplyr::filter(date < ymd('2024-04-01'))
-  chpsd <- chpsd %>% dplyr::filter(date < ymd('2024-04-01'))
-  chpsd <- chpsd %>% dplyr::filter(date > ymd('2016-01-01'))
   
-  dat <- merge(dat, chpsd, by = 'date', all = T)
-  dat$BR[1] <- dat$BR[2]
-  dat$BRE[1] <- dat$BRE[2]
-  
-  dat2 <- dat2 %>% dplyr::select(-c(mcnn, acnn, mcno3, acno3, mcno2, acno2, mcsrp, acsrp))
+  dat2 <- dat2 %>% mutate(gtnload = if_else(aflow < 0, 0, actn*aflow), gtpload = if_else(aflow < 0, 0, actp*aflow), gdocload = if_else(aflow < 0, 0, acdoc*aflow))
+
+head(dat2)
   
   dat_int <- dat2 %>% dplyr::select(-date) %>% 
     mutate(across(everything(), ~ na.approx(., na.rm = FALSE)))
   dat_int <- dat_int %>% slice(2:(n()-1))
-  dat_int$date <- dat2$date
+  dat_int$date <- dat2 %>% slice(2:(n()-1)) %>% dplyr::select(date)
   
-  dat_int <- dat_int %>% dplyr::filter(date < ymd('2020-01-01'))
-  
-  ggplot(dat_int)+
-    geom_line(aes(x = ymd(date), y = gTOC))+
-    theme_classic()
-  
-  str(dat_int)
-  
-  dat_int <- dat_int %>% mutate(actn = (if_else(actn > 300, 300, actn)))
-  
-  dat_int$acnh4[nrow(dat_int)] <- 3
-  
-  dat_int$acdoc[nrow(dat_int)] <- 1900
-  
-  write.csv(dat_int, file = 'field_dat_sat_timeline.csv')
-  
-  dat_inc <- dat_int %>% mutate(across(everything(), ~. - mean(., na.rm = F)))
-  
-  dat_inc <- dat_inc %>% mutate(gsrainfall = (if_else(gsrainfall > 1, 0.5, gsrainfall))) %>% slice(2:(n()-1))
-  
-  dat_inc <- dat_inc %>% dplyr::select(-c(mctn, actn, mctp, actp, mcsal, acsal))
-  
-  dat_inc <- dat_inc %>% slice(2:(n()-1))
-  
-  dat1 <- dat %>% slice(2:(n()-1))
-  
-##John grab data
-  head(dat_int)
-  jgdat_int <- dat_int %>% dplyr::select(jNH4, jTOC, jDO, jTP, jsal, jturb, jNO2, jTN, jpH, jchla)
-jgdat_int <- jgdat_int %>% slice(2:(n()-1))
-jgdat_inc <- jgdat_int %>% mutate(across(everything(), ~. - mean(., na.rm = F)))
-
-##Dead creak data
-dcdat_int <- dat_int %>% dplyr::select(BR, BRE)
-dcdat_int <- dcdat_int %>% slice(2:(n()-1))
-dcdat_inc <- dcdat_int %>% mutate(across(everything(), ~. - mean(., na.rm = F)))
-
-#marsh stage
-ms_int <- dat_int %>% dplyr::select(chp_stage)
-ms_int <- ms_int %>% slice(2:(n()-1))
-ms_inc <- ms_int %>% mutate(across(everything(), ~. - mean(., na.rm = F)))
-
-gspH <- datg %>% dplyr::select(date, gspH) %>% filter(date > ymd('2011-01-01')) %>% filter(date < ymd('2024-12-01')) %>% mutate(gspH = na.approx(gspH, x = date))
-str(dat_int$date)
-plot <- ggplot(dat_int, aes(x = ymd(date), y = gpH)) +
-  geom_line(na.rm = T)
-plot
-#### Plot frequencies######## Plot frequencBREies####
+head(dat_int)
+#### Plot frequencies######## Plot frequencies####
   # select dat column
     colnames( dat_int )
-    var <- 'area'
+    var <- 'gdocload'
     x <- dat_int[,var]
   # Fourier transform
     spec <- spectrum( x, method = 'pgram', plot = FALSE )
@@ -212,6 +152,12 @@ plot
     grp <- list(c(1,2,3,4), c(5,6,7)) #jpH
     grp <- list(c(1,2), c(3,5), c(4,6), c(7,8), c(9,10,11,12,13,14,15,16)) #jchl
     grp <- list(c(1,2), c(3,4), c(5,6), c(7,8), c(9,10)) #marsh stage
+    grp <- list(c(1), c(2,3,4,5,7,9,10,11), c(6,8), c(12,13), c(14,15,16,17), c(18,19)) #gargrabchl
+    grp <- list(c(1), c(2,3), c(4,5,6)) #wbwinddir
+    grp <- list(c(1), c(2,3), c(4,5)) #wbwindspeed
+    grp <- list(c(1), c(2,3), c(4,6,7,10), c(5,8,9,11)) #gtnload
+    grp <- list(c(1), c(2,3), c(4,5), c(6,7), c(8,9)) #gtpload
+    grp <- list(c(1), c(2,3), c(4,5), c(6,7,8,9,10,11,12,15,18), c(13,14,16,17)) #gdocload
 
 
   
@@ -277,14 +223,16 @@ plot
 
  ####   
     signal
-chp_stage <- data.frame(signal) %>% setNames('chp_stage')
+gdocload <- data.frame(signal) %>% setNames('gdocload')
 
-allssa <- cbind(jNH4, jTOC, jDO, jTP, jsal, jturb, jTN, jpH, jchl)
+allssa <- cbind(gtnload, gtpload, gdocload)
 
-write.csv(chp_stage, file = 'SSA_chpstage.csv')
+write.csv(allssa, file = 'SSA_loads.csv')
 
-ssadates <- cbind(allssa, dat1$date) %>% rename(date = `dat1$date`)
-write.csv(ssadates, file = 'SSA_cc_dates.csv')
+
+
+ssadates <- cbind(allssa, dat_int$date) %>% rename(date = `dat_int$date`)
+write.csv(ssadates, file = 'SSA_chlgrabwbwind_dates.csv')
 
 ##Graphing time series
 str(dat_int)
